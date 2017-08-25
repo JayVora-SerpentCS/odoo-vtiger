@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+# See LICENSE file for full copyright and licensing details.
 {
     'name': 'CRM VTiger Integration',
     'version': '10.0.1.0.0',
     'summary': 'CRM VTiger Integration',
     'description': """
         CRM VTiger Integration""",
-    'author': 'Serpent Consulting Services Pvt Ltd',
+    'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
