@@ -40,7 +40,6 @@ class ResCompany(models.Model):
                     product_obj = self.env['product.product']
                     for res in result.get('result', []):
                         product_vals = {
-#                        'barcode': res.get('serial_no'),
                             'lst_price': res.get('unit_price'),
                             'description_sale': res.get('description'),
                             'standard_price': res.get('purchase_cost'),
@@ -50,14 +49,12 @@ class ResCompany(models.Model):
                                 'name': res.get('productname', ''),
                                 'type': 'product',
                                 'default_code': res.get('productcode'),
-#                                'uom_id': '', # usageunit
                             })
                         else:
                             product_vals.update({
                                 'name': res.get('servicename', ''),
                                 'type': 'service',
                                 'default_code': res.get('service_no'),
-#                                'uom_id': '', # service_usageunit
                             })
                         # Search for existing Product
                         product = product_obj.search(

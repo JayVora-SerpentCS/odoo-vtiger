@@ -47,8 +47,6 @@ class ResCompany(models.Model):
                         'description': res.get('description'),
                         'title_action': res.get('nextstep'),
                         'priority': res.get('starred', ''),
-#                        'source_id': res.get('source'),
-#                        'stage_id': res.get('sales_stage'),
                     }
                     contact_id = res.get('contact_id')
                     if contact_id:

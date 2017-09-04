@@ -41,8 +41,8 @@ class ResCompany(models.Model):
                         'name': res.get('firstname', '') + ' ' +
                         res.get('lastname', ''),
                         'email': res.get('email'),
-                        'supplier': res.get('contacttype') == 'Vendor'
-                        and True,
+                        'supplier': res.get('contacttype') == 'Vendor' and
+                        True,
                         'street': res.get('mailingstreet'),
                         'city': res.get('mailingcity'),
                         'zip': res.get('mailingzip'),
