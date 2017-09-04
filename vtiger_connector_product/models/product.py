@@ -2,7 +2,7 @@
 from odoo import fields, models
 
 
-class ResPartner(models.Model):
-    _inherit = 'res.partner'
+class ProductProduct(models.Model):
+    _inherit = 'product.product'
 
     vtiger_id = fields.Char('VTiger ID', readonly=True)

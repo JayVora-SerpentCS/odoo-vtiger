@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# See LICENSE file for full copyright and licensing details.
-
 from odoo import api, fields, models
 
 import json
 import urllib
 import urllib2
 from hashlib import md5
+from datetime import datetime
 
 URL = '/webservice.php'
 
@@ -17,6 +16,7 @@ class ResCompany(models.Model):
     access_key = fields.Char('Access Key')
     vtiger_server = fields.Char('VTiger Server')
     user_name = fields.Char('User Name')
+    last_sync_date = fields.Datetime('Last Synced Time')
 
     @api.multi
     def get_vtiger_server_url(self):
@@ -61,4 +61,5 @@ class ResCompany(models.Model):
 
     @api.multi
     def action_sync_vtiger(self):
+        self.write({'last_sync_date': datetime.now()})
         return True

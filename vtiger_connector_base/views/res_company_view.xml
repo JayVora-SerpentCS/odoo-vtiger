@@ -8,10 +8,11 @@
         <field name="arch" type="xml">
             <notebook position="inside">
                 <page name="vtiger_configuration" string="VTiger Configuration">
-                    <group col="4">
+                    <group col="4" name="vtiger_details">
                         <field name="access_key"/>
                         <field name="vtiger_server" placeholder="https://example.com"/>
                         <field name="user_name" placeholder="example@test.com"/>
+                        <field name="last_sync_date"/>
                     </group>
                 </page>
             </notebook>

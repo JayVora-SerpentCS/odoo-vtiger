@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import api, models
+from odoo import api, fields, models
 
 import json
 import urllib
@@ -12,17 +12,17 @@ class ResCompany(models.Model):
     @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
-        return self.sync_vtiger_crm()
+        return self.sync_vtiger_event()
 
     @api.multi
-    def sync_vtiger_crm(self):
+    def sync_vtiger_event(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
             where = ''
             if company.last_sync_date:
                 where = " WHERE modifiedtime >= %s " % (company.last_sync_date)
-            qry = "SELECT * FROM Potentials %s;" % (where)
+            qry = "SELECT * FROM Events %s;" % (where)
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -34,21 +34,19 @@ class ResCompany(models.Model):
             response = urllib2.urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
-                crm_obj = self.env['crm.lead']
+                event_obj = self.env['calendar.event']
                 partner_obj = self.env['res.partner']
                 for res in result.get('result', []):
-                    crm_vals = {
-                        'name': res.get('potentialname', ''),
-                        'email_from': res.get('email'),
-                        'probability': res.get('probability'),
-                        # TODO: server format
-                        'date_deadline': res.get('closingdate'),
-                        'planned_revenue': res.get('forecast_amount'),
+                    event_vals = {
+                        'name': res.get('subject', ''),
                         'description': res.get('description'),
-                        'title_action': res.get('nextstep'),
-                        'priority': res.get('starred', ''),
-#                        'source_id': res.get('source'),
-#                        'stage_id': res.get('sales_stage'),
+                        'privacy': res.get('visibility', '') == 'Public' and
+                            'public' or (res.get('visibility', '') == 'Private'
+                                         and 'private' or ''),
+                        'start_date': res.get('date_start'),
+                        'stop_date': res.get('due_date'),
+                        'recurrency': bool(res.get('recurringtype', '')),
+                        'rrule_type': res.get('recurringtype', '').lower(),
                     }
                     contact_id = res.get('contact_id')
                     if contact_id:
@@ -56,14 +54,14 @@ class ResCompany(models.Model):
                             [('vtiger_id', '=', contact_id)], limit=1
                         )
                         if partner:
-                            crm_vals.update({'partner_id': partner.id})
-                    # Search for existing lead
-                    crm = crm_obj.search(
+                            event_vals.update({'partner_id': partner.id})
+                    # Search for existing Event
+                    event = event_obj.search(
                         [('vtiger_id', '=', res.get('id'))], limit=1
                     )
-                    if crm:
-                        crm.write(crm_vals)
+                    if event:
+                        event.write(event_vals)
                     else:
-                        crm_vals.update({'vtiger_id': res.get('id')})
-                        crm_obj.create(crm_vals)
+                        event_vals.update({'vtiger_id': res.get('id')})
+                        event_obj.create(event_vals)
         return True

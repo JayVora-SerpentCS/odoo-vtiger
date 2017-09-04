@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="vtiger_base_css" name="VTiger Base CSS" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <link rel="stylesheet" href="/vtiger_connector_base/static/src/css/vtiger_base.css"/>
+        </xpath>
+    </template>
+
+</odoo>
