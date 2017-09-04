@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, models
 
 import json
 import urllib
@@ -38,11 +38,11 @@ class ResCompany(models.Model):
                 country_obj = self.env['res.country']
                 for res in result.get('result', []):
                     partner_vals = {
-                        'name': res.get('firstname', '') + ' ' +\
-                            res.get('lastname', ''),
+                        'name': res.get('firstname', '') + ' ' +
+                        res.get('lastname', ''),
                         'email': res.get('email'),
                         'supplier': res.get('contacttype') == 'Vendor'
-                            and True,
+                        and True,
                         'street': res.get('mailingstreet'),
                         'city': res.get('mailingcity'),
                         'zip': res.get('mailingzip'),

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, models
 
 import json
 import urllib
@@ -41,7 +41,8 @@ class ResCompany(models.Model):
                         'name': res.get('potentialname', ''),
                         'email_from': res.get('email'),
                         'probability': res.get('probability'),
-                        'date_deadline': res.get('closingdate'), # TODO: server format
+                        # TODO: server format
+                        'date_deadline': res.get('closingdate'),
                         'planned_revenue': res.get('forecast_amount'),
                         'description': res.get('description'),
                         'title_action': res.get('nextstep'),
