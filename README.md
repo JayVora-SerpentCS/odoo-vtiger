@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.org/JayVora-SerpentCS/odoo-vtiger.svg?branch=10.0)](https://travis-ci.org/JayVora-SerpentCS/odoo-vtiger)
-Odoo - vTiger Integration
 
 # odoo-vtiger
 Odoo - vTiger Integration
