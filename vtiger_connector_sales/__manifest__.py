@@ -5,7 +5,7 @@
     'summary': 'Sale VTiger Integration',
     'description': """
         Sale VTiger Integration""",
-    'author': 'Serpent Consulting Services Pvt Ltd',
+    'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
