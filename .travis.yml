@@ -1,36 +1,39 @@
-# Config file .travis.yml
-
-language: python
-sudo: required
+sudo: false
 cache: pip
 
-python:
-  - "2.7"
-
 addons:
+  postgresql: "9.2" # minimal postgresql version for the daterange method
   apt:
-    packages:
+   packages:
       - expect-dev  # provides unbuffer utility
-      - python-simplejson
-      - python-serial
-      - python-yaml
+      - python-lxml # because pip installation is slow
+
+
+language: python
+
+python:
+  - "3.5"
 
 env:
   global:
   - VERSION="10.0" TESTS="0" LINT_CHECK="0" TRANSIFEX="0"
-
+  - TRANSIFEX_USER='transbot@odoo-community.org'
+  
   matrix:
   - LINT_CHECK="1"
-  - TESTS="1" ODOO_REPO="odoo/odoo"
+  - TRANSIFEX="1"
   - TESTS="1" ODOO_REPO="OCA/OCB"
+  - TESTS="1" ODOO_REPO="odoo/odoo"
 
-virtualenv:
-  system_site_packages: true
+
+before_install:
+  - "export DISPLAY=:911.0"
+  - "sh -e /etc/init.d/xvfb start"
 
 install:
-  - pip install lxml # install lxml with pip to fix the error no module named lxml
-  - git clone --depth=1 https://github.com/OCA/maintainer-quality-tools.git ${HOME}/maintainer-quality-tools
+  - git clone https://github.com/OCA/maintainer-quality-tools.git ${HOME}/maintainer-quality-tools
   - export PATH=${HOME}/maintainer-quality-tools/travis:${PATH}
+  - export WKHTMLTOPDF_VERSION=0.12.4
   - travis_install_nightly
 
 script:
@@ -38,4 +41,3 @@ script:
 
 after_success:
   - travis_after_tests_success
-  
