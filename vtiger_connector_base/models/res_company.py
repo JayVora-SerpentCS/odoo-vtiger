@@ -51,7 +51,9 @@ class ResCompany(models.Model):
         req = urllib2.Request(url, data)
         response = urllib2.urlopen(req)
         response = json.loads(response.read())
-
+#        success = response.get('success')
+#        if success == False:
+#            
         # Return sessionName
         return response['result']['sessionName']
 

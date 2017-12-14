@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_vtiger_project_project_form" model="ir.ui.view">
+        <field name="name">project.project.vtiger.form</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr ="//div[@name='options_active']" position ="after">
+                <div name="vtiger">
+                    <group>
+                        <field name="vtiger_id"/>
+                    </group>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_vtiger_project_project_search" model="ir.ui.view">
+        <field name="name">project.project.vtiger.search</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_project_filter"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vtiger_id"/>
+            </field>
+            <filter name="Manager" position="after">
+                <filter string="Synced From Vtiger" name="vtiger" domain="[('vtiger_id', '!=', False)]"/>
+            </filter>
+        </field>
+    </record>
+
+</odoo>

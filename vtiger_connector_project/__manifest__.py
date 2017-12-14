@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Product VTiger Integration',
+    'name': 'Project VTiger Integration',
     'version': '10.0.1.0.0',
-    'summary': 'Product VTiger Integration',
+    'summary': 'Project VTiger Integration',
     'description': """
-        Product VTiger Integration""",
+        Project VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt Ltd',
     'website': 'https://www.serpentcs.com',
-    'category': 'Product',
+    'category': '',
     'depends': [
         'vtiger_connector_partner',
-        'stock',
+        'project',
     ],
     'data': [
         'views/res_company_view.xml',
-        'views/product_view.xml',
+        'views/project_view.xml',
     ],
     'installable': True,
 }

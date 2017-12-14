@@ -2,7 +2,7 @@
 from odoo import api, fields, models
 
 
-class ResPartner(models.Model):
-    _inherit = 'res.partner'
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
 
     vtiger_id = fields.Char('VTiger ID', readonly=True)

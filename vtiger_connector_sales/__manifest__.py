@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'CRM VTiger Integration',
+    'name': 'Sale VTiger Integration',
     'version': '10.0.1.0.0',
-    'summary': 'CRM VTiger Integration',
+    'summary': 'Sale VTiger Integration',
     'description': """
-        CRM VTiger Integration""",
+        Sale VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt Ltd',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
+        'vtiger_connector_products',
         'vtiger_connector_partner',
-        'calendar',
+        'vtiger_connector_crm',
+        'sale',
     ],
     'data': [
         'views/res_company_view.xml',
-        'views/calendar_event_view.xml',
+        'views/sale_view.xml',
     ],
-    'installable': False,
+    'installable': True,
 }

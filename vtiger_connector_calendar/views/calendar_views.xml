@@ -6,14 +6,13 @@
         <field name="model">calendar.event</field>
         <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
         <field name="arch" type="xml">
-            <div class="oe_title" position="after">
-                <group>
+            <xpath expr="//div[@class='oe_title']/h2" position="after">
+                <div name="vtiger">
                     <group>
                         <field name="vtiger_id"/>
                     </group>
-                    <group/>
-                </group>
-            </div>
+                </div>
+            </xpath>
         </field>
     </record>
 
@@ -25,7 +24,7 @@
             <field name="name" position="after">
                 <field name="vtiger_id"/>
             </field>
-            <filter context="{'group_by':'privacy'}" position="after">
+            <filter name="mymeetings" position="after">
                 <filter string="Synced From Vtiger" name="vtiger" domain="[('vtiger_id', '!=', False)]"/>
             </filter>
         </field>
