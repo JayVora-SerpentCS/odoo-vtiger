@@ -5,7 +5,7 @@
     'summary': 'VTiger Base Connector',
     'description': """
         VTiger Base Connector""",
-    'author': 'Serpent Consulting Services Pvt Ltd',
+    'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
