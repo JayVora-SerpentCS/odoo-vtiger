@@ -12,6 +12,7 @@ Odoo - vTiger Integration
 - Products
 - Opportunities
 - Quotes
+- Projects
 
 Help us do better by donating to us and motivating us : http://www.serpentcs.com/page/donate-to-serpentcs
 Thanks.
