@@ -5,7 +5,7 @@
     'summary': 'Calendar VTiger Integration',
     'description': """
         Calendar VTiger Integration""",
-    'author': 'Serpent Consulting Services Pvt Ltd',
+    'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
