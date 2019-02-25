@@ -95,7 +95,7 @@ class ResCompany(models.Model):
                         'zip': res.get('postalcode'),
                         'mobile': res.get('mobile'),
                         'phone': res.get('phone'),
-                        'fax': res.get('fax'),
+#                         'fax': res.get('fax'),
                         'comment': res.get('description'),
                         'ref': res.get('vendor_no')
                     }
@@ -147,7 +147,7 @@ class ResCompany(models.Model):
                         'city': res.get('bill_city'),
                         'zip': res.get('bill_code'),
                         'phone': res.get('phone'),
-                        'fax': res.get('fax'),
+#                         'fax': res.get('fax'),
                         'comment': res.get('description'),
                     }
 #                    TODO need to develop for users

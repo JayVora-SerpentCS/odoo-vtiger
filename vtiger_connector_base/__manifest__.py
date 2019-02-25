@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'VTiger Base Connector',
-    'version': '10.0.1.0.0',
+    'version': '11.0.1.0.0',
     'summary': 'VTiger Base Connector',
     'description': """
         VTiger Base Connector""",
