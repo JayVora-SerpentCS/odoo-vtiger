@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_vtiger_crm_company_form" model="ir.ui.view">
+        <field name="name">res.company.vtiger_crm.form</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="vtiger_connector_base.view_vtiger_company_form"/>
+        <field name="arch" type="xml">
+            <group name="vtiger_details" position="after">
+                <button name="sync_vtiger_project" string="Sync Projects(s)" type="object" class="vtiger_button"/>
+            </group>
+        </field>
+    </record>
+
+</odoo>
