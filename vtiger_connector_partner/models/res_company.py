@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 from odoo import api, fields, models
 
 import json
 import urllib
-import urllib2
+# import urllib2
+from urllib.request import urlopen
 
 
 class ResCompany(models.Model):
@@ -19,17 +19,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Contacts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
-            data = urllib.urlencode(values)
+            qry = """SELECT * FROM Contacts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
+            data = urllib.parse.urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib2.Request("%s?%s" % (url, data))
-            response = urllib2.urlopen(req)
+            req = urllib.request.Request('%s?%s' % (url, data))
+            response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
                 partner_obj = self.env['res.partner']
@@ -46,7 +43,7 @@ class ResCompany(models.Model):
                         'opt_out': res.get('emailoptout', False),
                         'mobile': res.get('mobile'),
                         'phone': res.get('phone'),
-                        'fax': res.get('fax'),
+#                         'fax': res.get('fax'),
                         'comment': res.get('description'),
                     }
                     mailingcountry = res.get('mailingcountry')
@@ -75,17 +72,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Vendors WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
-            data = urllib.urlencode(values)
+            qry = """SELECT * FROM Vendors WHERE modifiedtime >= '%s';""" % (company.last_sync_date,)
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
+            data = urllib.parse.urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib2.Request("%s?%s" % (url, data))
-            response = urllib2.urlopen(req)
+            req = urllib.request.Request("%s?%s" % (url, data))
+            response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
                 partner_obj = self.env['res.partner']
@@ -130,17 +124,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Accounts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
-            data = urllib.urlencode(values)
+            qry = """SELECT * FROM Accounts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
+            data = urllib.parse.urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib2.Request("%s?%s" % (url, data))
-            response = urllib2.urlopen(req)
+            req = urllib.request.Request("%s?%s" % (url, data))
+            response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
                 partner_obj = self.env['res.partner']

@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 from odoo import api, fields, models
 
 import json
 import urllib
-import urllib2
+import requests
+# import urllib2
 from hashlib import md5
 from datetime import datetime
 
-URL = '/webservice.php'
+URL = 'webservice.php'
 
 
 class ResCompany(models.Model):
@@ -27,33 +27,34 @@ class ResCompany(models.Model):
         """Get the token using 'getchallenge' operation"""
         self.ensure_one()
         values = {'operation': 'getchallenge', 'username': self.user_name}
-        data = urllib.urlencode(values)
+        data = urllib.parse.urlencode(values)
         url = self.get_vtiger_server_url()
-        req = urllib2.Request('%s?%s' % (url, data))
-        response = urllib2.urlopen(req).read()
+        req = urllib.request.urlopen('%s?%s' % (url, data))
+        response = req.read()
         token = json.loads(response)['result']['token']
-
         # Use the TOKEN + ACCESSKEY to create the tokenized accessKey
-        tokenized_accessKey = md5(token + self.access_key)
+        tokenized_accessKey = md5(token.encode('utf-8') + self.access_key.encode('utf-8'))
         return tokenized_accessKey.hexdigest()
 
     @api.multi
     def vtiger_login(self, access_key):
         """Using AccessKey tokenized, perform a login operation."""
         self.ensure_one()
-        values = {
-            'operation': 'login',
-            'username': self.user_name,
-            'accessKey': access_key,
-        }
-        data = urllib.urlencode(values)
+        values = {'operation': 'login',
+                  'username': self.user_name,
+                  'accessKey': access_key}
         url = self.get_vtiger_server_url()
-        req = urllib2.Request(url, data)
-        response = urllib2.urlopen(req)
-        response = json.loads(response.read())
+        response = requests.post(url=url, data=values).json()
+#         data = urllib.parse.urlencode(values)
+#         url = self.get_vtiger_server_url()
+#         req = urllib.request.urlopen(url, data)
+#         req = urllib.request('%s?%s' % (url, data))
+#         response = urllib.request.urlopen('%s?%s' % (url, data))
+#         resp = response.read()
+#         response = urllib2.urlopen(req)
+#         response = json.loads(response.read())
 #        success = response.get('success')
 #        if success == False:
-#            
         # Return sessionName
         return response['result']['sessionName']
 

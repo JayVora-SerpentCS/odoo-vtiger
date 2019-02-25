@@ -8,9 +8,8 @@
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
-    'depends': [
-        'base',
-    ],
+    'depends': ['base',
+                ],
     'data': [
         'views/vtiger_templates.xml',
         'data/vtiger_connector_base_data.xml',
