@@ -18,9 +18,9 @@ class ResCompany(models.Model):
     def sync_vtiger_partner(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
+            print "access_key-----10---------", access_key
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Contacts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM Contacts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -75,8 +75,7 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Vendors WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM Vendors WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -130,8 +129,7 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Accounts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM Accounts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,

@@ -25,8 +25,7 @@ class ResCompany(models.Model):
             company.sync_vtiger_products()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM PurchaseOrder WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM PurchaseOrder WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,

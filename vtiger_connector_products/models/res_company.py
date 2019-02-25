@@ -20,8 +20,7 @@ class ResCompany(models.Model):
             self.sync_vtiger_service_products()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Products WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM Products WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -76,8 +75,7 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Services WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            qry = """SELECT * FROM Services WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
             values = {
                 'operation': 'query',
                 'query': qry,
