@@ -1,18 +1,21 @@
 {
-    'name': 'Partner VTiger Integration',
+    'name': 'Sale VTiger Integration',
     'version': '11.0.1.0.0',
-    'summary': 'Partner VTiger Integration',
+    'summary': 'Sale VTiger Integration',
     'description': """
-        Partner VTiger Integration""",
+        Sale VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': '',
     'depends': [
-        'vtiger_connector_base',
+        'vtiger_connector_products',
+        'vtiger_connector_partner',
+        'vtiger_connector_crm',
+        'sale',
     ],
     'data': [
         'views/res_company_view.xml',
-        'views/res_partner_view.xml',
+        'views/sale_view.xml',
     ],
     'installable': True,
 }

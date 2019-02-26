@@ -1,11 +1,12 @@
 from odoo import api, fields, models
 
 import json
-import urllib
 import requests
 # import urllib2
 from hashlib import md5
 from datetime import datetime
+from urllib.request import urlopen
+from urllib.parse import urlencode
 
 URL = 'webservice.php'
 
@@ -27,9 +28,9 @@ class ResCompany(models.Model):
         """Get the token using 'getchallenge' operation"""
         self.ensure_one()
         values = {'operation': 'getchallenge', 'username': self.user_name}
-        data = urllib.parse.urlencode(values)
+        data = urlencode(values)
         url = self.get_vtiger_server_url()
-        req = urllib.request.urlopen('%s?%s' % (url, data))
+        req = urlopen('%s?%s' % (url, data))
         response = req.read()
         token = json.loads(response)['result']['token']
         # Use the TOKEN + ACCESSKEY to create the tokenized accessKey

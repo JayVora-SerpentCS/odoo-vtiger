@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 
 
-class CrmLead(models.Model):
-    _inherit = 'crm.lead'
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
 
     vtiger_id = fields.Char('VTiger ID', readonly=True)

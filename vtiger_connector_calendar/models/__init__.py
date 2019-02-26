@@ -1,2 +1,2 @@
-from . import partner
+from . import calendar
 from . import res_company

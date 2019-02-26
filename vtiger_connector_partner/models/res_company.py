@@ -1,9 +1,9 @@
-from odoo import api, fields, models
-
 import json
-import urllib
-# import urllib2
+
+from odoo import api, fields, models
 from urllib.request import urlopen
+from urllib.request import Request
+from urllib.parse import urlencode
 
 
 class ResCompany(models.Model):
@@ -19,13 +19,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Contacts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            qry = ("""SELECT * FROM Contacts WHERE modifiedtime >= '%s';"""
+                   % (company.last_sync_date))
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
-            data = urllib.parse.urlencode(values)
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib.request.Request('%s?%s' % (url, data))
+            req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
@@ -72,13 +73,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Vendors WHERE modifiedtime >= '%s';""" % (company.last_sync_date,)
+            qry = ("""SELECT * FROM Contacts WHERE modifiedtime >= '%s';"""
+                   % (company.last_sync_date))
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
-            data = urllib.parse.urlencode(values)
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib.request.Request("%s?%s" % (url, data))
+            req = Request("%s?%s" % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
@@ -124,13 +126,14 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Accounts WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            qry = ("""SELECT * FROM Contacts WHERE modifiedtime >= '%s';"""
+                   % (company.last_sync_date))
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
-            data = urllib.parse.urlencode(values)
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib.request.Request("%s?%s" % (url, data))
+            req = Request("%s?%s" % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):

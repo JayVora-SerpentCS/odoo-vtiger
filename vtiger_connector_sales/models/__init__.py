@@ -1,2 +1,2 @@
-from . import partner
+from . import sale
 from . import res_company

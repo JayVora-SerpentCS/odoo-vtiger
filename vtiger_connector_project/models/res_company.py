@@ -1,9 +1,8 @@
-from odoo import api, fields, models
-
 import json
-import urllib
-# import urllib2
+from odoo import api, fields, models
 from urllib.request import urlopen
+from urllib.request import Request
+from urllib.parse import urlencode
 
 
 class ResCompany(models.Model):
@@ -21,15 +20,15 @@ class ResCompany(models.Model):
             company.sync_vtiger_partner()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Project WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            qry = ("""SELECT * FROM Project WHERE modifiedtime >= '%s';"""
+                   % (company.last_sync_date))
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
-            data = urllib.parse.urlencode(values)
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib.request.Request('%s?%s' % (url, data))
+            req = Request('%s?%s' % (url, data))
             response = urlopen(req)
-            print ("\n\n\n ------responseresponseresponse-----",response)
             result = json.loads(response.read())
             if result.get('success'):
                 project_obj = self.env['project.project']
@@ -41,14 +40,12 @@ class ResCompany(models.Model):
                     contact_id = res.get('linktoaccountscontacts')
                     if contact_id:
                         partner = partner_obj.search(
-                            [('vtiger_id', '=', contact_id)], limit=1
-                        )
+                            [('vtiger_id', '=', contact_id)], limit=1)
                         if partner:
                             project_vals.update({'partner_id': partner.id})
                     # Search for existing partner
                     crm = project_obj.search(
-                        [('vtiger_id', '=', res.get('id'))], limit=1
-                    )
+                        [('vtiger_id', '=', res.get('id'))], limit=1)
                     if crm:
                         crm.write(project_vals)
                     else:
