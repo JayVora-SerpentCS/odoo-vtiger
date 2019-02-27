@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
+# See LICENSE file for full copyright and licensing details.
+
 {
-    'name': 'Project VTiger Integration Projects',
+    'name': 'VTiger Base Connector Projects',
     'version': '11.0.1.0.0',
-    'summary': 'Project VTiger Integration',
-    'description': """
-        Project VTiger Integration""",
-    'author': 'Serpent Consulting Services Pvt. Ltd.',
-    'website': 'https://www.serpentcs.com',
     'category': '',
+    'license': 'AGPL-3',
+    'author': 'Serpent Consulting Services Pvt. Ltd.',
+    'maintainer': 'Serpent Consulting Services Pvt. Ltd.',
+    'website': 'https://www.serpentcs.com',
     'depends': [
         'vtiger_connector_partner',
         'project',
