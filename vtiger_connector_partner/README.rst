@@ -1,6 +1,6 @@
-==================
+=========================
 Vtiger Connector Partners
-==================
+=========================
 
 * This module helps to Create or update Partners (Customers, Vendor or Organization)
 

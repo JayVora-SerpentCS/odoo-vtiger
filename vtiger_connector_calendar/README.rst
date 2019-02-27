@@ -1,6 +1,6 @@
-==================
+=========================
 Vtiger Connector Calender
-==================
+=========================
 
 * This module helps to Create or update Calender Events
 

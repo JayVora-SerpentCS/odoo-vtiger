@@ -1,6 +1,6 @@
-==================
+=========================
 Vtiger Connector Products
-==================
+=========================
 
 * This module helps to Create or update Products
 
