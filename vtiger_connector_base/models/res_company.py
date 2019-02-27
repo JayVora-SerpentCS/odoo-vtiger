@@ -2,7 +2,6 @@ from odoo import api, fields, models
 
 import json
 import requests
-# import urllib2
 from hashlib import md5
 from datetime import datetime
 from urllib.request import urlopen
@@ -34,7 +33,8 @@ class ResCompany(models.Model):
         response = req.read()
         token = json.loads(response)['result']['token']
         # Use the TOKEN + ACCESSKEY to create the tokenized accessKey
-        tokenized_accessKey = md5(token.encode('utf-8') + self.access_key.encode('utf-8'))
+        tokenized_accessKey = md5(token.encode('utf-8') +
+                                  self.access_key.encode('utf-8'))
         return tokenized_accessKey.hexdigest()
 
     @api.multi
@@ -46,16 +46,6 @@ class ResCompany(models.Model):
                   'accessKey': access_key}
         url = self.get_vtiger_server_url()
         response = requests.post(url=url, data=values).json()
-#         data = urllib.parse.urlencode(values)
-#         url = self.get_vtiger_server_url()
-#         req = urllib.request.urlopen(url, data)
-#         req = urllib.request('%s?%s' % (url, data))
-#         response = urllib.request.urlopen('%s?%s' % (url, data))
-#         resp = response.read()
-#         response = urllib2.urlopen(req)
-#         response = json.loads(response.read())
-#        success = response.get('success')
-#        if success == False:
         # Return sessionName
         return response['result']['sessionName']
 

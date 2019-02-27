@@ -1,5 +1,5 @@
 {
-    'name': 'Purchase VTiger Integration',
+    'name': 'Purchase VTiger Integration Purchase',
     'version': '11.0.1.0.0',
     'summary': 'Purchase VTiger Integration',
     'description': """

@@ -1,5 +1,5 @@
 {
-    'name': 'Products VTiger Integration',
+    'name': 'Products VTiger Integration Products',
     'version': '11.0.1.0.0',
     'summary': 'Products VTiger Integration',
     'description': """

@@ -1,5 +1,5 @@
 {
-    'name': 'Partner VTiger Integration',
+    'name': 'Partner VTiger Integration Partner',
     'version': '11.0.1.0.0',
     'summary': 'Partner VTiger Integration',
     'description': """

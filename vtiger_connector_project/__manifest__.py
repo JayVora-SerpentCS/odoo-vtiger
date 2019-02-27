@@ -1,5 +1,5 @@
 {
-    'name': 'Project VTiger Integration',
+    'name': 'Project VTiger Integration Projects',
     'version': '11.0.1.0.0',
     'summary': 'Project VTiger Integration',
     'description': """

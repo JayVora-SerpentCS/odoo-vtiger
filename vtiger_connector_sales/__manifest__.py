@@ -1,5 +1,5 @@
 {
-    'name': 'Sale VTiger Integration',
+    'name': 'Sale VTiger Integration Sales',
     'version': '11.0.1.0.0',
     'summary': 'Sale VTiger Integration',
     'description': """

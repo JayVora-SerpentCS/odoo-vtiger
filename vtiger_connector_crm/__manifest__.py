@@ -1,5 +1,5 @@
 {
-    'name': 'CRM VTiger Integration',
+    'name': 'CRM VTiger Integration Lead',
     'version': '11.0.1.0.0',
     'summary': 'CRM VTiger Integration',
     'description': """

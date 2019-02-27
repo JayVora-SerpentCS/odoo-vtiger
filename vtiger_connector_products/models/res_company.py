@@ -38,10 +38,9 @@ class ResCompany(models.Model):
                         'sale_ok': True,
                         'purchase_ok': True,
                         'type': 'consu',
-#                        'barcode': res.get('productcode'),
                         'default_code': res.get('serial_no'),
                         'list_price': res.get('unit_price'),
-                        'standard_price': res.get('purchase_cost'), # TODO: server format
+                        'standard_price': res.get('purchase_cost'),
                         'description_sale': res.get('description'),
                     }
                     # Search for existing Product
@@ -54,7 +53,7 @@ class ResCompany(models.Model):
                         product_vals.update({'vtiger_id': res.get('id')})
                         product_templ_obj.create(product_vals)
         return True
-    
+
     @api.multi
     def sync_vtiger_service_products(self):
         for company in self:
@@ -80,7 +79,7 @@ class ResCompany(models.Model):
                         'type': 'service',
                         'default_code': res.get('serial_no'),
                         'list_price': res.get('unit_price'),
-                        'standard_price': res.get('purchase_cost'), # TODO: server format
+                        'standard_price': res.get('purchase_cost'),
                         'description_sale': res.get('description'),
                     }
                     product = product_templ_obj.search(

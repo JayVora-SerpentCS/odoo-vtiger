@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Calendar VTiger Integration',
+    'name': 'Calendar VTiger Integration Calender',
     'version': '10.0.1.0.0',
     'summary': 'Calendar VTiger Integration',
     'description': """

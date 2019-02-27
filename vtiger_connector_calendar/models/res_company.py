@@ -1,5 +1,5 @@
 import json
-from odoo import api, fields, models
+from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DT
 from datetime import datetime
 from datetime import timedelta
@@ -41,8 +41,9 @@ class ResCompany(models.Model):
                     if res.get('recurringtype') != '--None--':
                         calendar_vals.update(
                             {'recurrency': bool(res.get('recurringtype', '')),
-                             'rrule_type': res.get('recurringtype', '').lower(),})
-##                    setting the time duration
+                             'rrule_type':
+                                res.get('recurringtype', '').lower()})
+#                    setting the time duration
                     get_start_time = res.get('time_start')
                     get_start_date = res.get('date_start')
                     get_date = str(get_start_date)
@@ -54,10 +55,8 @@ class ResCompany(models.Model):
                         end_date = datetime.strptime(get_en_date, DT)
                     if get_start_date and get_end_date and \
                        get_start_date > get_end_date:
-                        calendar_vals.update({
-                             'start': str(start_date),
-#                             'stop': start_date,
-                        })
+                        calendar_vals.update({'start': str(start_date)})
+#                                             'stop': start_date,
                     if get_start_date and get_end_date and \
                        get_start_date < get_end_date:
 
@@ -79,32 +78,23 @@ class ResCompany(models.Model):
 #                             'stop': start_date,
 #                        })
                     else:
-                        duration_hours = int(res.get('duration_hours'))
-                        duration_minutes = int(res.get('duration_minutes'))
-                        hr = abs(duration_hours)
-                        min = abs(duration_minutes)
-                        total_duration  = float(str ( str(hr)+ '.'+ str(min)))
                         split_time = str(get_start_time).split(':')
                         hour = int(split_time[0])
                         minute = int(split_time[1])
                         second = int(split_time[2])
                         date_s = datetime.strptime(get_date, DT) + \
-                            timedelta(hours=hour,minutes=minute,seconds=second)
+                            timedelta(hours=hour,
+                                      minutes=minute,
+                                      seconds=second)
                         date_stp = date_s + timedelta(days=1)
-                        duration = calendar_obj._get_duration(str(date_s), 
-                                                              str(date_stp))
                         calendar_vals.update({
                             'start': str(date_s),
-                            'start_datetime':str(date_s),
-#                            'stop': end_date,
-#                            'duration': duration,
-                            'allday': False,
-                        })
+                            'start_datetime': str(date_s),
+                            'allday': False})
                         if not calendar_vals.get('stop'):
                             calendar_vals.update({
-                            'stop': str(date_stp),
-                            'stop_datetime': str(date_stp)
-                        })
+                                'stop': str(date_stp),
+                                'stop_datetime': str(date_stp)})
 #                        temp_calendar_vals.update({
 #                            'start_datetime': date_s,
 #                            'duration': total_duration,
@@ -129,15 +119,5 @@ class ResCompany(models.Model):
                         calendar_vals.update({
                             'vtiger_id': res.get('id'),
                         })
-                        dd = calendar_vals.get('stop')
-                        uid = self._context.get('uid')
-                        user_rec = self.env['res.users'].browse(uid)
-#                        kll = self._context.get('tz') 
-#                        tz = pytz.timezone(user_rec.partner_id.tz) or pytz.utc
-#                        date_stop = pytz.utc.localize(dd).astimezone(tz)
-#                        calendar_vals.update({
-#                            'start_datetime': calendar_vals.get('start'),
-#                            'start_datetime': calendar_vals.get('start'),
-#                        })
                         calendar_obj.create(calendar_vals)
         return True
