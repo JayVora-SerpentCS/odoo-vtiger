@@ -5,8 +5,7 @@ import json
 from odoo import api, fields, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
 from datetime import datetime
-from urllib.request import urlopen
-from urllib.request import Request
+from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 
 
@@ -29,8 +28,12 @@ class ResCompany(models.Model):
             company.sync_vtiger_crm()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = ("""SELECT * FROM SalesOrder WHERE modifiedtime >= '%s';"""
-                   % (company.last_sync_date))
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM SalesOrder
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM SalesOrder;"""
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
@@ -128,8 +131,12 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = ("""SELECT * FROM Quotes WHERE modifiedtime >= '%s';"""
-                   % (company.last_sync_date))
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Quotes
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Quotes;"""
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}

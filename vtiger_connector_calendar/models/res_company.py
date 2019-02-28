@@ -6,8 +6,7 @@ from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DT
 from datetime import datetime
 from datetime import timedelta
-from urllib.request import urlopen
-from urllib.request import Request
+from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 
 
@@ -24,8 +23,11 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = ("""SELECT * FROM Events WHERE modifiedtime >= '%s';"""
-                   % (company.last_sync_date))
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Events WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Events;"""
             values = {'operation': 'query',
                       'query': qry,
                       'sessionName': session_name}
