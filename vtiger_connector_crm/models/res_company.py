@@ -21,7 +21,12 @@ class ResCompany(models.Model):
             company.sync_vtiger_partner()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Potentials WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Potentials
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Potentials;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -40,14 +45,13 @@ class ResCompany(models.Model):
                         'name': res.get('potentialname', ''),
                         'email_from': res.get('email'),
                         'probability': res.get('probability'),
-                        'date_deadline': res.get('closingdate'), # TODO: server format
+                        'date_deadline': res.get('closingdate'),
                         'planned_revenue': res.get('forecast_amount'),
                         'description': res.get('description'),
                         'title_action': res.get('nextstep'),
-                        'priority': res.get('starred', ''),
+                        'priority': res.get('starred', '')}
 #                        'source_id': res.get('source'),
 #                        'stage_id': res.get('sales_stage'),
-                    }
                     contact_id = res.get('contact_id')
                     if contact_id:
                         partner = partner_obj.search(

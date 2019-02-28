@@ -21,7 +21,12 @@ class ResCompany(models.Model):
             company.sync_vtiger_partner()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Project WHERE modifiedtime >= '%s';""" % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Project
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Project;"""
             values = {
                 'operation': 'query',
                 'query': qry,

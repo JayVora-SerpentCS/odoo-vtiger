@@ -7,14 +7,10 @@
         Calendar VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
-    'depends': [
-        'vtiger_connector_base',
-        'calendar',
-    ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/calendar_views.xml',
-    ],
+    'category': 'Marketing',
+    'depends': ['calendar',
+                'vtiger_connector_base'],
+    'data': ['views/res_company_view.xml',
+             'views/calendar_views.xml'],
     'installable': True,
 }

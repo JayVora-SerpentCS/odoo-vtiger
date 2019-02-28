@@ -7,11 +7,9 @@
         Products VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
-    'depends': [
-        'vtiger_connector_base',
-        'product',
-    ],
+    'category': 'Sales',
+    'depends': ['product',
+                'vtiger_connector_base'],
     'data': [
         'views/res_company_view.xml',
         'views/product_template_view.xml',

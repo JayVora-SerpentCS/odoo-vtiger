@@ -7,7 +7,7 @@
         Purchase VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
+    'category': 'Purchases',
     'depends': [
         'vtiger_connector_products',
         'vtiger_connector_partner',

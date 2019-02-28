@@ -7,7 +7,7 @@
         Partner VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
+    'category': 'Sales',
     'depends': [
         'vtiger_connector_base',
     ],

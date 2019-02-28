@@ -7,7 +7,7 @@
         CRM VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
+    'category': 'Marketing',
     'depends': [
         'vtiger_connector_partner',
         'crm',

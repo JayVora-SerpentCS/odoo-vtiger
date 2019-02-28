@@ -7,14 +7,10 @@
         VTiger Base Connector""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
-    'depends': [
-        'base',
-    ],
-    'data': [
-        'views/vtiger_templates.xml',
-        'data/vtiger_connector_base_data.xml',
-        'views/res_company_view.xml'
-    ],
+    'category': 'Base Module',
+    'depends': ['base'],
+    'data': ['data/vtiger_connector_base_data.xml',
+             'views/vtiger_templates.xml',
+             'views/res_company_view.xml'],
     'installable': True,
 }

@@ -7,16 +7,14 @@
         Sale VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
-    'depends': [
-        'vtiger_connector_products',
-        'vtiger_connector_partner',
-        'vtiger_connector_crm',
-        'sale',
+    'category': 'Sales',
+    'depends': ['sale',
+                'vtiger_connector_products',
+                'vtiger_connector_partner',
+                'vtiger_connector_crm',
     ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/sale_view.xml',
+    'data': ['views/res_company_view.xml',
+             'views/sale_view.xml',
     ],
     'installable': True,
 }

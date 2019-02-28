@@ -7,7 +7,7 @@
         Project VTiger Integration""",
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
+    'category': 'Project',
     'depends': [
         'vtiger_connector_partner',
         'project',
