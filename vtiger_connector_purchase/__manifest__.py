@@ -8,14 +8,10 @@
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': 'Purchases',
-    'depends': [
-        'vtiger_connector_products',
-        'vtiger_connector_partner',
-        'purchase',
-    ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/purchase_view.xml',
-    ],
+    'depends': ['purchase',
+                'vtiger_connector_products',
+                'vtiger_connector_partner'],
+    'data': ['views/res_company_view.xml',
+             'views/purchase_view.xml'],
     'installable': True,
 }

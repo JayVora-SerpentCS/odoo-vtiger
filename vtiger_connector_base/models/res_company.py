@@ -53,7 +53,6 @@ class ResCompany(models.Model):
         response = json.loads(response.read())
 #        success = response.get('success')
 #        if success == False:
-#            
         # Return sessionName
         return response['result']['sessionName']
 

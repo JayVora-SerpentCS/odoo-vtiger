@@ -8,12 +8,8 @@
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': 'Sales',
-    'depends': [
-        'vtiger_connector_base',
-    ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/res_partner_view.xml',
-    ],
+    'depends': ['vtiger_connector_base'],
+    'data': ['views/res_company_view.xml',
+             'views/res_partner_view.xml'],
     'installable': True,
 }

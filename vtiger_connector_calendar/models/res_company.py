@@ -52,11 +52,11 @@ class ResCompany(models.Model):
                     get_start_date = res.get('date_start')
                     get_date = str(get_start_date)
                     if get_start_date:
-                        start_date = datetime.strptime(get_date, '%Y-%m-%d')
+                        start_date = datetime.strptime(get_date, DF)
                     get_end_date = res.get('due_date')
                     if get_end_date:
                         get_en_date = str(get_end_date)
-                        end_date = datetime.strptime(get_en_date, '%Y-%m-%d')
+                        end_date = datetime.strptime(get_en_date, DF)
                     if get_start_date and get_end_date and \
                        get_start_date > get_end_date:
                         calendar_vals.update({'start': str(start_date)})

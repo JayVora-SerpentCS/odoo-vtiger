@@ -8,13 +8,9 @@
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'category': 'Marketing',
-    'depends': [
-        'vtiger_connector_partner',
-        'crm',
-    ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/crm_view.xml',
-    ],
+    'depends': ['crm',
+                'vtiger_connector_partner'],
+    'data': ['views/res_company_view.xml',
+             'views/crm_view.xml'],
     'installable': True,
 }
