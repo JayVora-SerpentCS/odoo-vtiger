@@ -44,9 +44,7 @@ data = urllib.urlencode(values)
 # added data a parameter here makes this a POST
 req = urllib2.Request(url, data)
 response = urllib2.urlopen(req)
-print 'here are the available types'
 print json.loads(response.read())
-
 
 # find out about a particular vTiger Object Type
 # we'll look at 'Potentials'

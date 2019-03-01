@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# See LICENSE file for full copyright and licensing details.
 from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
 from datetime import datetime
