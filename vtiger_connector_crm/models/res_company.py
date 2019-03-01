@@ -3,7 +3,7 @@
 
 import json
 
-from odoo import api, fields, models
+from odoo import api, models
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 

@@ -4,14 +4,14 @@
 {
     'name': 'VTiger Base Connector',
     'version': '11.0.1.0.0',
-    'category': 'Hidden',
+    'category': 'Base Module',
     'license': 'AGPL-3',
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'maintainer': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
     'depends': ['base'],
-    'data': ['views/vtiger_templates.xml',
-             'data/vtiger_connector_base_data.xml',
+    'data': ['data/vtiger_connector_base_data.xml',
+             'views/vtiger_templates.xml',
              'views/res_company_view.xml'],
     'installable': True,
 }

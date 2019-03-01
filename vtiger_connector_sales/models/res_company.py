@@ -2,7 +2,7 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
-from odoo import api, fields, models
+from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
 from datetime import datetime
 from urllib.request import urlopen, Request
