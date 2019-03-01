@@ -8,11 +8,8 @@ accessKey = ''
 # find the Access Key under preferences > User Advanced Options
 
 vtigerserver = ''
-
 url = '%s/webservice.php' % vtigerserver
-
 username = ''
-
 
 # let's set up the session
 # get the token using 'getchallenge' operation
@@ -44,7 +41,7 @@ data = urllib.urlencode(values)
 # added data a parameter here makes this a POST
 req = urllib2.Request(url, data)
 response = urllib2.urlopen(req)
-print json.loads(response.read())
+# print json.loads(response.read())
 
 # find out about a particular vTiger Object Type
 # we'll look at 'Potentials'
@@ -61,7 +58,6 @@ response = urllib2.urlopen(req)
 print 'about desc contacts'
 print values
 print json.loads(response.read())['result']
-
 
 # Query
 # find out about a particular vTiger Object Type
