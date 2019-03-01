@@ -97,7 +97,7 @@ class ResCompany(models.Model):
                         [('vtiger_id', '=', res.get('id'))], limit=1)
                     if purchase_order:
                         line_ids = purchase_line_obj.search([
-                                ('order_id', '=', purchase_order.id)])
+                            ('order_id', '=', purchase_order.id)])
                         if line_ids:
                             line_ids.unlink()
                         order_vals.update(
