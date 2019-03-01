@@ -47,7 +47,7 @@ response = urllib2.urlopen(req)
 # we'll look at 'Potentials'
 values.pop('username', False)
 values.pop('accessKey', False)
-print "\n\nPotentials", values
+# print "\n\nPotentials", values
 values['operation'] = 'describe'
 values['elementType'] = 'Contacts'
 data = urllib.urlencode(values)
@@ -55,9 +55,9 @@ data = urllib.urlencode(values)
 # so we append data to url
 req = urllib2.Request("%s?%s" % (url, data))
 response = urllib2.urlopen(req)
-print 'about desc contacts'
-print values
-print json.loads(response.read())['result']
+# print 'about desc contacts'
+# print values
+# print json.loads(response.read())['result']
 
 # Query
 # find out about a particular vTiger Object Type
@@ -69,5 +69,5 @@ data = urllib.urlencode(values)
 # so we append data to url
 req = urllib2.Request("%s?%s" % (url, data))
 response = urllib2.urlopen(req)
-print 'about Contacts'
-print json.loads(response.read())
+# print 'about Contacts'
+# print json.loads(response.read())
