@@ -65,11 +65,10 @@ class ResCompany(models.Model):
                     if get_start_date and get_end_date and \
                        get_start_date < get_end_date:
 
-                        calendar_vals.update({
-                             'start': str(start_date),
+                        calendar_vals.update(
+                            {'start': str(start_date),
                              'stop': str(end_date),
-                             'allday': True,
-                        })
+                             'allday': True})
 #                    temp_calendar_vals1.update({
 #                         'start': end_date,
 #                         'stop': start_date,
@@ -97,9 +96,9 @@ class ResCompany(models.Model):
                             'start_datetime': str(date_s),
                             'allday': False})
                         if not calendar_vals.get('stop'):
-                            calendar_vals.update({
-                                'stop': str(date_stp),
-                                'stop_datetime': str(date_stp)})
+                            calendar_vals.update(
+                                {'stop': str(date_stp),
+                                 'stop_datetime': str(date_stp)})
 #                        temp_calendar_vals.update({
 #                            'start_datetime': date_s,
 #                            'duration': total_duration,
