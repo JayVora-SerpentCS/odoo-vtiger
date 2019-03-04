@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+# See LICENSE file for full copyright and licensing details.
 
 import json
-import urllib
-import urllib2
+
+from odoo import api, models
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
 
 
 class ResCompany(models.Model):
@@ -21,17 +23,19 @@ class ResCompany(models.Model):
             company.sync_vtiger_partner()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Potentials WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
-            data = urllib.urlencode(values)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Potentials
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Potentials;"""
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib2.Request("%s?%s" % (url, data))
-            response = urllib2.urlopen(req)
+            req = Request('%s?%s' % (url, data))
+            response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
                 crm_obj = self.env['crm.lead']
@@ -40,15 +44,14 @@ class ResCompany(models.Model):
                     crm_vals = {
                         'name': res.get('potentialname', ''),
                         'email_from': res.get('email'),
-                        'probability': res.get('probability'),
-                        'date_deadline': res.get('closingdate'), # TODO: server format
+                        'probability': float(res.get('probability')) or 0.0,
+                        'date_deadline': res.get('closingdate'),
                         'planned_revenue': res.get('forecast_amount'),
                         'description': res.get('description'),
-                        'title_action': res.get('nextstep'),
-                        'priority': res.get('starred', ''),
+                        'activity_summary': res.get('nextstep'),
+                        'priority': res.get('starred', '')}
 #                        'source_id': res.get('source'),
 #                        'stage_id': res.get('sales_stage'),
-                    }
                     contact_id = res.get('contact_id')
                     if contact_id:
                         partner = partner_obj.search(

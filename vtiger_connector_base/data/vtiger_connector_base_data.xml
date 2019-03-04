@@ -9,9 +9,10 @@
             <field name="interval_type">days</field>
             <field name="numbercall">-1</field>
             <field eval="False" name="doall"/>
-            <field eval="'res.company'" name="model"/>
-            <field eval="'sync_vtiger'" name="function"/>
+            <field ref="model_res_company" name="model_id"/>
             <field eval="'()'" name="args"/>
+            <field name="state">code</field>
+            <field name="code">model.sync_vtiger()</field>
         </record>
 
     </data>
