@@ -19,6 +19,18 @@ class ResCompany(models.Model):
         return self.sync_vtiger_purchase_order()
 
     @api.multi
+    def update_existing_order(self, result):
+        '''Added the Method for the Work Existing order line,
+           Because the Vtiger return dictionary'''
+        purchase_order_obj = self.env['purchase.order']
+        for res in result.get('result', []):
+            order_id = purchase_order_obj.search(
+                [('vtiger_id', '=', res.get('id'))], limit=1)
+            if order_id:
+                order_id.order_line.unlink()
+        return True
+
+    @api.multi
     def sync_vtiger_purchase_order(self):
         for company in self:
             # Synchronise Partner
@@ -45,12 +57,8 @@ class ResCompany(models.Model):
             purchase_line_obj = self.env['purchase.order.line']
             partner_obj = self.env['res.partner']
             product_obj = self.env['product.product']
-            for res in result.get('result', []):
-                order_id = purchase_order_obj.search(
-                    [('vtiger_id', '=', res.get('id'))], limit=1)
-                if order_id:
-                    order_id.order_line.unlink()
             if result.get('success'):
+                self.update_existing_order(result)
                 for res in result.get('result', []):
                     order_id = purchase_order_obj.search(
                         [('vtiger_id', '=', res.get('id'))], limit=1)
@@ -92,7 +100,6 @@ class ResCompany(models.Model):
                         'price_unit': float(price_unit),
                         'price_subtotal': float(netprice),
                         'order_id': order_id.id,
-                        'vtiger_line_id': res.get('id'),
                         'date_planned': order_id.date_order}
                     if order_id:
                         order_id.write({'order_line': [(0, 0, order_line_vals)]})

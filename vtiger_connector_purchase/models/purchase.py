@@ -8,9 +8,3 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     vtiger_id = fields.Char('VTiger ID', readonly=True)
-
-
-class PurchaseOrderLine(models.Model):
-    _inherit = 'purchase.order.line'
-
-    vtiger_line_id = fields.Char('VTiger ID', readonly=True)
