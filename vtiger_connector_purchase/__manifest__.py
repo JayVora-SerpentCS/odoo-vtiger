@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
+# See LICENSE file for full copyright and licensing details.
+
 {
-    'name': 'Purchase VTiger Integration',
-    'version': '10.0.1.0.0',
-    'summary': 'Purchase VTiger Integration',
-    'description': """
-        Purchase VTiger Integration""",
+    'name': 'VTiger Purchase Connector',
+    'version': '11.0.1.0.0',
+    'category': 'Purchases',
+    'license': 'AGPL-3',
     'author': 'Serpent Consulting Services Pvt. Ltd.',
+    'maintainer': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'category': '',
-    'depends': [
-        'vtiger_connector_products',
-        'vtiger_connector_partner',
-        'purchase',
-    ],
-    'data': [
-        'views/res_company_view.xml',
-        'views/purchase_view.xml',
-    ],
+    'depends': ['purchase',
+                'vtiger_connector_products',
+                'vtiger_connector_partner'],
+    'data': ['views/res_company_view.xml',
+             'views/purchase_view.xml'],
     'installable': True,
 }
