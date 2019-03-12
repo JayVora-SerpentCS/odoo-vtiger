@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+# See LICENSE file for full copyright and licensing details.
+from odoo import api, models
 
 import json
 import urllib
@@ -20,8 +21,12 @@ class ResCompany(models.Model):
             self.sync_vtiger_service_products()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Products WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Products
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Products;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -41,17 +46,15 @@ class ResCompany(models.Model):
                         'sale_ok': True,
                         'purchase_ok': True,
                         'type': 'consu',
-#                        'barcode': res.get('productcode'),
                         'default_code': res.get('serial_no'),
                         'list_price': res.get('unit_price'),
-                        'standard_price': res.get('purchase_cost'), # TODO: server format
-                        'description_sale': res.get('description'),
+                        'standard_price': res.get('purchase_cost'),
+                        'description_sale': res.get('description')}
 #                        'description': res.get('description'),
 #                        'title_action': res.get('nextstep'),
 #                        'priority': res.get('starred', ''),
 #                        'source_id': res.get('source'),
 #                        'stage_id': res.get('sales_stage'),
-                    }
 #                    contact_id = res.get('contact_id')
 #                    if contact_id:
 #                        partner = partner_obj.search(
@@ -69,20 +72,21 @@ class ResCompany(models.Model):
                         product_vals.update({'vtiger_id': res.get('id')})
                         product_templ_obj.create(product_vals)
         return True
-    
-    
+
     @api.multi
     def sync_vtiger_service_products(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Services WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Services
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Services;"""
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
             data = urllib.urlencode(values)
             url = company.get_vtiger_server_url()
             req = urllib2.Request("%s?%s" % (url, data))
@@ -98,7 +102,7 @@ class ResCompany(models.Model):
                         'type': 'service',
                         'default_code': res.get('serial_no'),
                         'list_price': res.get('unit_price'),
-                        'standard_price': res.get('purchase_cost'), # TODO: server format
+                        'standard_price': res.get('purchase_cost'),
                         'description_sale': res.get('description'),
                     }
                     product = product_templ_obj.search(

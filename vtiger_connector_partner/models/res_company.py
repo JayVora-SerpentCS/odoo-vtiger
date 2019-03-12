@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+# See LICENSE file for full copyright and licensing details.
+from odoo import api, models
 
 import json
 import urllib
@@ -19,8 +20,12 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Contacts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Contacts
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Contacts;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -36,8 +41,8 @@ class ResCompany(models.Model):
                 country_obj = self.env['res.country']
                 for res in result.get('result', []):
                     partner_vals = {
-                        'name': res.get('firstname', '') + ' ' +\
-                            res.get('lastname', ''),
+                        'name': res.get('firstname', '') + ' ' +
+                        res.get('lastname', ''),
                         'email': res.get('email'),
                         'customer': True,
                         'street': res.get('mailingstreet'),
@@ -75,8 +80,12 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Vendors WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Vendors
+                        WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Vendors;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -123,15 +132,18 @@ class ResCompany(models.Model):
                         partner_vals.update({'vtiger_id': res.get('id')})
                         partner_obj.create(partner_vals)
         return True
-    
-    
+
     @api.multi
     def sync_vtiger_partner_organizations(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Accounts WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Accounts
+                        WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Accounts;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -169,7 +181,9 @@ class ResCompany(models.Model):
                         if country:
                             partner_vals.update({'country_id': country.id})
                     # Search for existing partner
-                    partner = partner_obj.search([('vtiger_id', '=', res.get('id')), ('is_company', '=', 'True')], limit=1)
+                    partner = partner_obj.search([
+                        ('vtiger_id', '=', res.get('id')),
+                        ('is_company', '=', 'True')], limit=1)
                     if partner:
                         partner.write(partner_vals)
                     else:

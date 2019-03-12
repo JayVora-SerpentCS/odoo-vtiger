@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
-from datetime import datetime, date
+# See LICENSE file for full copyright and licensing details.
+from odoo import api, models
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DT
+from datetime import datetime
 
 import json
 import urllib
@@ -27,13 +29,15 @@ class ResCompany(models.Model):
             company.sync_vtiger_crm()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM SalesOrder WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM SalesOrder
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM SalesOrder;"""
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
             data = urllib.urlencode(values)
             url = company.get_vtiger_server_url()
             req = urllib2.Request("%s?%s" % (url, data))
@@ -47,72 +51,62 @@ class ResCompany(models.Model):
                 product_obj = self.env['product.product']
 #                order_line_obj = self.env['product.product']
                 for res in result.get('result', []):
-                    order_vals = {
-                        'note': res.get('terms_conditions'),
-                    }
+                    order_vals = {'note': res.get('terms_conditions')}
 #                    setting the stage
-                    quotestage = res.get('quotestage')
+#                     quotestage = res.get('quotestage')
                     date_o = res.get('createdtime')
                     if date_o:
                         awe = str(date_o)
-                        date_frm = datetime.strptime(awe, '%Y-%m-%d %H:%M:%S')
-                        date_order = date_frm.strftime('%d-%m-%Y')
+                        date_frm = datetime.strptime(awe, DT)
+                        date_order = date_frm.strftime(DF)
                         order_vals.update({'date_order': date_order})
                     date_due = res.get('duedate')
                     if date_due:
                         dat_due = str(date_due)
-                        date_format = datetime.strptime(dat_due, '%Y-%m-%d')
+                        date_format = datetime.strptime(dat_due, DF)
                         order_vals.update({'validity_date': date_format})
 #                    for order line values
-                    price_unit = res.get('listprice')
-                    netprice = res.get('netprice')
-                    quantity = res.get('quantity')
-                    order_line_vals = {
-#                        'order_id': order_id.id,
-                        'name': res.get('comment'),
-                        'product_uom_qty': float(quantity),
-                        'price_unit': float(price_unit),
-                        'price_subtotal': float(netprice),
-                    }
+                    price_unit = res.get('listprice') or 0.0
+                    netprice = res.get('netprice') or 0.0
+                    quantity = res.get('quantity') or 0.0
+                    order_line_vals = {'name': res.get('comment') or '',
+                                       'product_uom_qty': float(quantity),
+                                       'price_unit': float(price_unit),
+                                       'price_subtotal': float(netprice)}
                     product_id = res.get('productid')
                     if product_id:
                         product = product_obj.search(
-                            [('vtiger_id', '=', product_id)], limit=1
-                        )
+                            [('vtiger_id', '=', product_id)], limit=1)
                         if product:
                             order_line_vals.update({'product_id': product.id})
                     contact_id = res.get('contact_id')
                     if contact_id:
                         partner = partner_obj.search(
-                            [('vtiger_id', '=', contact_id)], limit=1
-                        )
+                            [('vtiger_id', '=', contact_id)], limit=1)
                         if partner:
                             order_vals.update({'partner_id': partner.id})
 #                   linking opertunity with sale order
                     opportunity_id = res.get('potential_id')
                     if opportunity_id:
-#                        self.sync_vtiger_crm()
                         opportunity = lead_obj.search(
-                            [('vtiger_id', '=', opportunity_id)], limit=1
-                        )
+                            [('vtiger_id', '=', opportunity_id)], limit=1)
                         if opportunity:
-                            order_vals.update({'opportunity_id': opportunity.id})
+                            order_vals.update({'opportunity_id':
+                                               opportunity.id})
                     # Search for existing sale order
                     sale_order = sale_order_obj.search(
                         [('vtiger_id', '=', res.get('id'))], limit=1
                     )
                     if sale_order:
-                        previous_state =str(sale_order.state)
-                        sale_order.write({'state':'draft'})
+                        previous_state = str(sale_order.state)
+                        sale_order.write({'state': 'draft'})
                         line_ids = order_line_obj.search(
-                            [('order_id', '=', sale_order.id)]
-                        )
+                            [('order_id', '=', sale_order.id)])
                         if line_ids:
                             line_ids.unlink()
                         order_vals.update({
                             'order_line': [(0, 0, order_line_vals)],
-                            'state': previous_state
-                        })
+                            'state': previous_state})
                         sale_order.write(order_vals)
                     else:
                         order_vals.update({
@@ -131,8 +125,12 @@ class ResCompany(models.Model):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Quotes WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Quotes
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Quotes;"""
             values = {
                 'operation': 'query',
                 'query': qry,
@@ -151,7 +149,7 @@ class ResCompany(models.Model):
                 product_obj = self.env['product.product']
 #                order_line_obj = self.env['product.product']
                 for res in result.get('result', []):
-                    quotestage = str (res.get('quotestage'))
+                    quotestage = str(res.get('quotestage'))
                     if quotestage == 'New':
                         order_vals = {
                             'note': res.get('terms_conditions'),
@@ -160,15 +158,14 @@ class ResCompany(models.Model):
                         date_o = res.get('createdtime')
                         if date_o:
                             awe = str(date_o)
-                            date_frm = datetime.strptime(awe, '%Y-%m-%d %H:%M:%S')
-                            date_order = date_frm.strftime('%d-%m-%Y')
+                            date_frm = datetime.strptime(awe, DT)
+                            date_order = date_frm.strftime(DF)
                             order_vals.update({'date_order': date_order})
     #                    for order line values
-                        price_unit = res.get('listprice')
-                        netprice = res.get('netprice')
-                        quantity = res.get('quantity')
+                        price_unit = res.get('listprice') or 0.0
+                        netprice = res.get('netprice') or 0.0
+                        quantity = res.get('quantity') or 0.0
                         order_line_vals = {
-    #                        'order_id': order_id.id,
                             'name': res.get('comment'),
                             'product_uom_qty': float(quantity),
                             'price_unit': float(price_unit),
@@ -177,33 +174,31 @@ class ResCompany(models.Model):
                         product_id = res.get('productid')
                         if product_id:
                             product = product_obj.search(
-                                [('vtiger_id', '=', product_id)], limit=1
-                            )
+                                [('vtiger_id', '=', product_id)], limit=1)
                             if product:
-                                order_line_vals.update({'product_id': product.id})
+                                order_line_vals.update({'product_id':
+                                                        product.id})
                         contact_id = res.get('contact_id')
                         if contact_id:
                             partner = partner_obj.search(
-                                [('vtiger_id', '=', contact_id)], limit=1
-                            )
+                                [('vtiger_id', '=', contact_id)], limit=1)
                             if partner:
                                 order_vals.update({'partner_id': partner.id})
     #                   linking opertunity with sale order
                         opportunity_id = res.get('potential_id')
                         if opportunity_id:
-    #                        self.sync_vtiger_crm()
                             opportunity = lead_obj.search(
-                                [('vtiger_id', '=', opportunity_id)], limit=1
-                            )
+                                [('vtiger_id', '=', opportunity_id)], limit=1)
                             if opportunity:
-                                order_vals.update({'opportunity_id': opportunity.id})
+                                order_vals.update({'opportunity_id':
+                                                   opportunity.id})
                         # Search for existing sale order
                         sale_order = sale_order_obj.search(
                             [('vtiger_id', '=', res.get('id'))], limit=1
                         )
                         if sale_order:
-                            previous_state =str(sale_order.state)
-                            sale_order.write({'state':'draft'})
+                            previous_state = str(sale_order.state)
+                            sale_order.write({'state': 'draft'})
                             line_ids = order_line_obj.search(
                                 [('order_id', '=', sale_order.id)]
                             )
@@ -222,4 +217,3 @@ class ResCompany(models.Model):
                             })
                             sale_order_obj.create(order_vals)
         return True
-    

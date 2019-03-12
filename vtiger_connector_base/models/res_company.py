@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# See LICENSE file for full copyright and licensing details.
+
 from odoo import api, fields, models
 
 import json
@@ -53,7 +55,6 @@ class ResCompany(models.Model):
         response = json.loads(response.read())
 #        success = response.get('success')
 #        if success == False:
-#            
         # Return sessionName
         return response['result']['sessionName']
 
