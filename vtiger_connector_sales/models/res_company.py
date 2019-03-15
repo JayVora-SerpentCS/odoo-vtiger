@@ -157,7 +157,7 @@ class ResCompany(models.Model):
             if result.get('success'):
                 self.update_existing_sale_Quotes(result)
                 for res in result.get('result', []):
-                    if res.get('sostatus') == 'Created':
+                    if res.get('quotestage') == 'Created':
                         order_id = sale_order_obj.search(
                             [('vtiger_id', '=', res.get('id'))], limit=1)
                         so_order_vals = {}
