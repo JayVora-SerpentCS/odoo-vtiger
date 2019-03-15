@@ -12,12 +12,10 @@ How to use it:
 
 Bug Tracker
 ===========
-
-Credits
-=======
+https://github.com/JayVora-SerpentCS/odoo-vtiger/issues
 
 Contributors
-------------
+=============
 
 * Serpent Consulting Services Pvt. Ltd. <support@serpentcs.com>
 
