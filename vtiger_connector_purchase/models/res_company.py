@@ -54,7 +54,6 @@ class ResCompany(models.Model):
             response = urlopen(req)
             result = json.loads(response.read())
             purchase_order_obj = self.env['purchase.order']
-            purchase_line_obj = self.env['purchase.order.line']
             partner_obj = self.env['res.partner']
             product_obj = self.env['product.product']
             if result.get('success'):
@@ -69,7 +68,8 @@ class ResCompany(models.Model):
                             partner = partner_obj.search(
                                 [('vtiger_id', '=', contact_id)], limit=1)
                             if partner:
-                                po_order_vals.update({'partner_id': partner.id})
+                                po_order_vals.update(
+                                    {'partner_id': partner.id})
                         date_o = res.get('createdtime')
                         if date_o:
                             awe = str(date_o)
@@ -81,9 +81,11 @@ class ResCompany(models.Model):
                             modified = str(date_modified)
                             modified_date = datetime.strptime(modified, DT)
                             date_planned = modified_date.strftime(DF)
-                            po_order_vals.update({'date_planned': date_planned})
-                        po_order_vals.update({'vtiger_id': res.get('id'),
-                                              'notes': res.get('terms_conditions')}),
+                            po_order_vals.update(
+                                {'date_planned': date_planned})
+                        po_order_vals.update(
+                            {'vtiger_id': res.get('id'),
+                             'notes': res.get('terms_conditions')}),
                         order_id = purchase_order_obj.create(po_order_vals)
                     product_id = res.get('productid')
                     if product_id:
@@ -102,5 +104,6 @@ class ResCompany(models.Model):
                         'order_id': order_id.id,
                         'date_planned': order_id.date_order}
                     if order_id:
-                        order_id.write({'order_line': [(0, 0, order_line_vals)]})
+                        order_id.write(
+                            {'order_line': [(0, 0, order_line_vals)]})
         return True

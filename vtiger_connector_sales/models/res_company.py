@@ -39,7 +39,6 @@ class ResCompany(models.Model):
             order_id = sale_order_obj.search(
                 [('vtiger_id', '=', res.get('id'))], limit=1)
             if order_id:
-                print ("-update_existing_sale_Quotes--", order_id)
                 order_id.order_line.unlink()
         return True
 
@@ -67,7 +66,6 @@ class ResCompany(models.Model):
             response = urlopen(req)
             result = json.loads(response.read())
             sale_order_obj = self.env['sale.order']
-            order_line_obj = self.env['sale.order.line']
             partner_obj = self.env['res.partner']
             lead_obj = self.env['crm.lead']
             product_obj = self.env['product.product']
@@ -83,27 +81,32 @@ class ResCompany(models.Model):
                             partner = partner_obj.search(
                                 [('vtiger_id', '=', contact_id)], limit=1)
                             if partner:
-                                so_order_vals.update({'partner_id': partner.id})
+                                so_order_vals.update(
+                                    {'partner_id': partner.id})
                         date_o = res.get('createdtime')
                         if date_o:
                             awe = str(date_o)
                             date_frm = datetime.strptime(awe, DT)
                             date_order = date_frm.strftime(DT)
-                            so_order_vals.update({'date_order': date_order,
-                                                  'confirmation_date': date_order})
+                            so_order_vals.update(
+                                {'date_order': date_order,
+                                 'confirmation_date': date_order})
                         date_due = res.get('duedate')
                         if date_due:
                             dat_due = str(date_due)
                             date_format = datetime.strptime(dat_due, DF)
-                            so_order_vals.update({'validity_date': date_format})
+                            so_order_vals.update(
+                                {'validity_date': date_format})
                         opportunity_id = res.get('potential_id')
                         if opportunity_id:
                             opportunity = lead_obj.search(
                                 [('vtiger_id', '=', opportunity_id)], limit=1)
                             if opportunity:
-                                so_order_vals.update({'opportunity_id': opportunity.id})
-                        so_order_vals.update({'vtiger_id': res.get('id'),
-                                              'note': res.get('terms_conditions')}),
+                                so_order_vals.update(
+                                    {'opportunity_id': opportunity.id})
+                        so_order_vals.update(
+                            {'vtiger_id': res.get('id'),
+                             'note': res.get('terms_conditions')}),
                         order_id = sale_order_obj.create(so_order_vals)
                     product_id = res.get('productid')
                     if product_id:
@@ -121,7 +124,8 @@ class ResCompany(models.Model):
                         'price_subtotal': float(netprice),
                         'order_id': order_id.id}
                     if order_id:
-                        order_id.write({'order_line': [(0, 0, order_line_vals)]})
+                        order_id.write({
+                            'order_line': [(0, 0, order_line_vals)]})
                     if res.get('sostatus') == 'Approved':
                         order_id.sudo().action_confirm()
             company.sync_vtiger_sale_Quotes()
@@ -147,7 +151,6 @@ class ResCompany(models.Model):
             response = urlopen(req)
             result = json.loads(response.read())
             sale_order_obj = self.env['sale.order']
-            order_line_obj = self.env['sale.order.line']
             partner_obj = self.env['res.partner']
             lead_obj = self.env['crm.lead']
             product_obj = self.env['product.product']
@@ -164,30 +167,34 @@ class ResCompany(models.Model):
                                 partner = partner_obj.search(
                                     [('vtiger_id', '=', contact_id)], limit=1)
                                 if partner:
-                                    so_order_vals.update({'partner_id': partner.id})
+                                    so_order_vals.update(
+                                        {'partner_id': partner.id})
                             date_o = res.get('createdtime')
                             if date_o:
                                 awe = str(date_o)
                                 date_frm = datetime.strptime(awe, DT)
                                 date_order = date_frm.strftime(DT)
-                                so_order_vals.update({'date_order': date_order,
-                                                      'confirmation_date': date_order})
-                                
+                                so_order_vals.update(
+                                    {'date_order': date_order,
+                                     'confirmation_date': date_order})
                             date_due = res.get('duedate')
                             if date_due:
                                 dat_due = str(date_due)
                                 date_format = datetime.strptime(dat_due, DF)
-                                so_order_vals.update({'validity_date': date_format})
-                            
+                                so_order_vals.update(
+                                    {'validity_date': date_format})
                             opportunity_id = res.get('potential_id')
                             if opportunity_id:
                                 opportunity = lead_obj.search(
-                                    [('vtiger_id', '=', opportunity_id)], limit=1)
+                                    [('vtiger_id', '=', opportunity_id)],
+                                    limit=1)
                                 if opportunity:
-                                    so_order_vals.update({'opportunity_id': opportunity.id})
-                            so_order_vals.update({'vtiger_id': res.get('id'),
-                                                  'note': res.get('terms_conditions'),
-                                                  'state': 'draft',}),
+                                    so_order_vals.update(
+                                        {'opportunity_id': opportunity.id})
+                            so_order_vals.update(
+                                {'vtiger_id': res.get('id'),
+                                 'note': res.get('terms_conditions'),
+                                 'state': 'draft', }),
                             order_id = sale_order_obj.create(so_order_vals)
                         product_id = res.get('productid')
                         if product_id:
@@ -205,5 +212,6 @@ class ResCompany(models.Model):
                             'price_subtotal': float(netprice),
                             'order_id': order_id.id}
                         if order_id:
-                            order_id.write({'order_line': [(0, 0, order_line_vals)]})
+                            order_id.write({'order_line': [
+                                (0, 0, order_line_vals)]})
         return True
