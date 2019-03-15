@@ -19,6 +19,18 @@ class ResCompany(models.Model):
         return self.sync_vtiger_purchase_order()
 
     @api.multi
+    def update_existing_order(self, result):
+        '''Added the Method for the Work Existing order line,
+           Because the Vtiger return dictionary'''
+        purchase_order_obj = self.env['purchase.order']
+        for res in result.get('result', []):
+            order_id = purchase_order_obj.search(
+                [('vtiger_id', '=', res.get('id'))], limit=1)
+            if order_id:
+                order_id.order_line.unlink()
+        return True
+
+    @api.multi
     def sync_vtiger_purchase_order(self):
         for company in self:
             # Synchronise Partner
@@ -41,71 +53,57 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
+            purchase_order_obj = self.env['purchase.order']
+            partner_obj = self.env['res.partner']
+            product_obj = self.env['product.product']
             if result.get('success'):
-                purchase_order_obj = self.env['purchase.order']
-                purchase_line_obj = self.env['purchase.order.line']
-                partner_obj = self.env['res.partner']
-                product_obj = self.env['product.product']
+                self.update_existing_order(result)
                 for res in result.get('result', []):
-                    order_vals = {'notes': res.get('terms_conditions')}
-#                    purchase order line
-                    price_unit = res.get('listprice')
-                    netprice = res.get('netprice')
-                    quantity = res.get('quantity')
-                    order_line_vals = {
-                        'name': res.get('comment'),
-                        'product_qty': float(quantity),
-                        'price_unit': float(price_unit),
-                        'price_subtotal': float(netprice)
-                    }
-#                    changing the date format of createdtime
-                    date_o = res.get('createdtime')
-                    if date_o:
-                        awe = str(date_o)
-                        date_frm = datetime.strptime(awe, DT)
-                        date_order = date_frm.strftime('%d-%m-%Y')
-                        order_vals.update({'date_order': date_order})
-                        order_line_vals.update({'date_planned': date_order})
-                    date_modified = res.get('modifiedtime')
-                    if date_modified:
-                        modified = str(date_modified)
-                        modified_date = datetime.strptime(modified, DT)
-                        date_planned = modified_date.strftime(DF)
-                        order_vals.update({'date_planned': date_planned})
-                        order_line_vals.update({'date_planned': date_planned})
-#                    for order line values
+                    order_id = purchase_order_obj.search(
+                        [('vtiger_id', '=', res.get('id'))], limit=1)
+                    po_order_vals = {}
+                    if not order_id:
+                        contact_id = res.get('vendor_id')
+                        if contact_id:
+                            partner = partner_obj.search(
+                                [('vtiger_id', '=', contact_id)], limit=1)
+                            if partner:
+                                po_order_vals.update(
+                                    {'partner_id': partner.id})
+                        date_o = res.get('createdtime')
+                        if date_o:
+                            awe = str(date_o)
+                            date_frm = datetime.strptime(awe, DT)
+                            date_order = date_frm.strftime(DT)
+                            po_order_vals.update({'date_order': date_order})
+                        date_modified = res.get('modifiedtime')
+                        if date_modified:
+                            modified = str(date_modified)
+                            modified_date = datetime.strptime(modified, DT)
+                            date_planned = modified_date.strftime(DF)
+                            po_order_vals.update(
+                                {'date_planned': date_planned})
+                        po_order_vals.update(
+                            {'vtiger_id': res.get('id'),
+                             'notes': res.get('terms_conditions')}),
+                        order_id = purchase_order_obj.create(po_order_vals)
                     product_id = res.get('productid')
                     if product_id:
                         product = product_obj.search(
                             [('vtiger_id', '=', product_id)], limit=1)
-                        if product:
-                            if product.uom_po_id:
-                                order_line_vals.update(
-                                    {'product_uom': product.uom_po_id.id})
-                            else:
-                                order_line_vals.update(
-                                    {'product_uom': product.uom_id.id})
-                            order_line_vals.update({'product_id': product.id})
-                    contact_id = res.get('vendor_id')
-                    if contact_id:
-                        partner = partner_obj.search(
-                            [('vtiger_id', '=', contact_id)], limit=1)
-                        if partner:
-                            order_vals.update({'partner_id': partner.id})
-                    # Search for existing sale order
-                    purchase_order = purchase_order_obj.search(
-                        [('vtiger_id', '=', res.get('id'))], limit=1)
-                    if purchase_order:
-                        line_ids = purchase_line_obj.search([
-                            ('order_id', '=', purchase_order.id)])
-                        if line_ids:
-                            line_ids.unlink()
-                        order_vals.update(
+                    price_unit = res.get('listprice')
+                    netprice = res.get('hdnGrandTotal')
+                    quantity = res.get('quantity')
+                    order_line_vals = {
+                        'name': res.get('comment'),
+                        'product_id': product and product.id or False,
+                        'product_uom': product.uom_id.id,
+                        'product_qty': float(quantity),
+                        'price_unit': float(price_unit),
+                        'price_subtotal': float(netprice),
+                        'order_id': order_id.id,
+                        'date_planned': order_id.date_order}
+                    if order_id:
+                        order_id.write(
                             {'order_line': [(0, 0, order_line_vals)]})
-                        purchase_order.write(order_vals)
-                    else:
-                        order_vals.update({'vtiger_id': res.get('id')})
-                        order_vals.update(
-                            {'order_line': [(0, 0, order_line_vals)]})
-                        purchase_order_obj.create(order_vals)
         return True
