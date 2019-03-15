@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+# See LICENSE file for full copyright and licensing details.
+
+from odoo import fields, models
 
 
 class CalendarEvent(models.Model):

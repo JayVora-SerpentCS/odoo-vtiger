@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+# See LICENSE file for full copyright and licensing details.
 
 import json
-import urllib
-import urllib2
+from odoo import api, models
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
 
 
 class ResCompany(models.Model):
@@ -12,26 +13,28 @@ class ResCompany(models.Model):
     @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
-        return self.sync_vtiger_crm()
+        return self.sync_vtiger_project()
 
     @api.multi
-    def sync_vtiger_crm(self):
+    def sync_vtiger_project(self):
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = """SELECT * FROM Project WHERE modifiedtime >= %s;"""\
-                % (company.last_sync_date)
-            values = {
-                'operation': 'query',
-                'query': qry,
-                'sessionName': session_name,
-            }
-            data = urllib.urlencode(values)
+            if company.last_sync_date:
+                qry = ("""SELECT * FROM Project
+                            WHERE modifiedtime >= '%s';"""
+                       % (company.last_sync_date))
+            else:
+                qry = """SELECT * FROM Project;"""
+            values = {'operation': 'query',
+                      'query': qry,
+                      'sessionName': session_name}
+            data = urlencode(values)
             url = company.get_vtiger_server_url()
-            req = urllib2.Request("%s?%s" % (url, data))
-            response = urllib2.urlopen(req)
+            req = Request('%s?%s' % (url, data))
+            response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
                 project_obj = self.env['project.project']
@@ -43,14 +46,12 @@ class ResCompany(models.Model):
                     contact_id = res.get('linktoaccountscontacts')
                     if contact_id:
                         partner = partner_obj.search(
-                            [('vtiger_id', '=', contact_id)], limit=1
-                        )
+                            [('vtiger_id', '=', contact_id)], limit=1)
                         if partner:
                             project_vals.update({'partner_id': partner.id})
                     # Search for existing partner
                     crm = project_obj.search(
-                        [('vtiger_id', '=', res.get('id'))], limit=1
-                    )
+                        [('vtiger_id', '=', res.get('id'))], limit=1)
                     if crm:
                         crm.write(project_vals)
                     else:
