@@ -4,7 +4,7 @@
     <record id="view_vtiger_crm_lead_form" model="ir.ui.view">
         <field name="name">crm.lead.vtiger.form</field>
         <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.crm_case_form_view_oppor"/>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
             <field name="team_id" position="after">
                 <field name="vtiger_id"/>

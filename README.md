@@ -7,6 +7,7 @@ Odoo - vTiger Integration
 - Partner / Contacts / Suppliers / Customers
 - Calendar
 - Meetings
+- Invoices
 - Events
 - Leads
 - Products

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
 import json
@@ -13,12 +12,10 @@ from urllib.parse import urlencode
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
         return self.sync_vtiger_sale_order()
 
-    @api.multi
     def update_existing_sale_order(self, result):
         '''Added the Method for the Work Existing order line,
            Because the Vtiger return dictionary'''
@@ -30,7 +27,6 @@ class ResCompany(models.Model):
                 order_id.order_line.unlink()
         return True
 
-    @api.multi
     def update_existing_sale_Quotes(self, result):
         '''Added the Method for the Work Existing order line,
            Because the Vtiger return dictionary'''
@@ -42,7 +38,6 @@ class ResCompany(models.Model):
                 order_id.order_line.unlink()
         return True
 
-    @api.multi
     def sync_vtiger_sale_order(self):
         for company in self:
             # Synchronise Partner
@@ -89,8 +84,7 @@ class ResCompany(models.Model):
                             date_frm = datetime.strptime(awe, DT)
                             date_order = date_frm.strftime(DT)
                             so_order_vals.update(
-                                {'date_order': date_order,
-                                 'confirmation_date': date_order})
+                                {'date_order': date_order})
                         date_due = res.get('duedate')
                         if date_due:
                             dat_due = str(date_due)
@@ -131,7 +125,6 @@ class ResCompany(models.Model):
             company.sync_vtiger_sale_Quotes()
         return True
 
-    @api.multi
     def sync_vtiger_sale_Quotes(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
@@ -175,8 +168,7 @@ class ResCompany(models.Model):
                                 date_frm = datetime.strptime(awe, DT)
                                 date_order = date_frm.strftime(DT)
                                 so_order_vals.update(
-                                    {'date_order': date_order,
-                                     'confirmation_date': date_order})
+                                    {'date_order': date_order})
                             date_due = res.get('duedate')
                             if date_due:
                                 dat_due = str(date_due)
