@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_vtiger_invoice_form_form" model="ir.ui.view">
+        <field name="name">account.move.vtiger.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <field name="invoice_payment_term_id" position="after">
+                <field name="vtiger_id"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_vtiger_invoice_search" model="ir.ui.view">
+        <field name="name">account.move.vtiger.search</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vtiger_id"/>
+            </field>
+<!--             <filter name="customer" position="after">
+                <filter string="Synced From Vtiger" name="vtiger" domain="[('vtiger_id', '!=', False)]"/>
+            </filter> -->
+        </field>
+    </record>
+
+</odoo>

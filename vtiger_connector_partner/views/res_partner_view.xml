@@ -20,7 +20,7 @@
             <field name="name" position="after">
                 <field name="vtiger_id"/>
             </field>
-            <filter name="supplier" position="after">
+            <filter name="type_person" position="after">
                 <filter string="Synced From Vtiger" name="vtiger" domain="[('vtiger_id', '!=', False)]"/>
             </filter>
         </field>

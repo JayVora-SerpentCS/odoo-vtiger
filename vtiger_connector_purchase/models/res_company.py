@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
 import json
@@ -13,12 +12,10 @@ from urllib.parse import urlencode
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
         return self.sync_vtiger_purchase_order()
 
-    @api.multi
     def update_existing_order(self, result):
         '''Added the Method for the Work Existing order line,
            Because the Vtiger return dictionary'''
@@ -30,7 +27,6 @@ class ResCompany(models.Model):
                 order_id.order_line.unlink()
         return True
 
-    @api.multi
     def sync_vtiger_purchase_order(self):
         for company in self:
             # Synchronise Partner

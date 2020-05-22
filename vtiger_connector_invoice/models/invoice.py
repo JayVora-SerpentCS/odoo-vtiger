@@ -3,7 +3,7 @@
 from odoo import fields, models
 
 
-class CrmLead(models.Model):
-    _inherit = 'crm.lead'
+class AccountInvoice(models.Model):
+    _inherit = 'account.move'
 
     vtiger_id = fields.Char('VTiger ID', readonly=True)

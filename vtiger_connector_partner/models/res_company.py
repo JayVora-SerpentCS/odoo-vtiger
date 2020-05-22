@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
 import json
@@ -11,12 +10,10 @@ from urllib.parse import urlencode
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
         return self.sync_vtiger_partner()
 
-    @api.multi
     def sync_vtiger_partner(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
@@ -35,6 +32,7 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
+            print ("=====result=====", result)
             if result.get('success'):
                 partner_obj = self.env['res.partner']
                 country_obj = self.env['res.country']
@@ -43,7 +41,7 @@ class ResCompany(models.Model):
                         'name': res.get('firstname', '') + ' ' +
                         res.get('lastname', ''),
                         'email': res.get('email'),
-                        'customer': True,
+                        'customer_rank': 1,
                         'street': res.get('mailingstreet'),
                         'city': res.get('mailingcity'),
                         'zip': res.get('mailingzip'),
@@ -71,7 +69,6 @@ class ResCompany(models.Model):
             self.sync_vtiger_partner_organizations()
         return True
 
-    @api.multi
     def sync_vtiger_partner_vendor(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
@@ -98,7 +95,7 @@ class ResCompany(models.Model):
                         'name': res.get('vendorname'),
                         'email': res.get('email'),
                         'website': res.get('website'),
-                        'supplier': True,
+                        'supplier_rank': 1,
                         'street': res.get('street'),
                         'city': res.get('city'),
                         'zip': res.get('postalcode'),
@@ -126,7 +123,6 @@ class ResCompany(models.Model):
                         partner_obj.create(partner_vals)
         return True
 
-    @api.multi
     def sync_vtiger_partner_organizations(self):
         for company in self:
             access_key = company.get_vtiger_access_key()
@@ -153,8 +149,8 @@ class ResCompany(models.Model):
                         'name': res.get('accountname'),
                         'email': res.get('email1'),
                         'website': res.get('website'),
-                        'supplier': True,
-                        'customer': True,
+                        'supplier_rank': 1,
+                        'customer_rank': 1,
                         'street': res.get('bill_street'),
                         'city': res.get('bill_city'),
                         'zip': res.get('bill_code'),

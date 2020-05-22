@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
 import json
@@ -11,12 +10,10 @@ from urllib.parse import urlencode
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    @api.multi
     def action_sync_vtiger(self):
         super(ResCompany, self).action_sync_vtiger()
         return self.sync_vtiger_products()
 
-    @api.multi
     def sync_vtiger_products(self):
         for company in self:
             self.sync_vtiger_service_products()
@@ -60,7 +57,6 @@ class ResCompany(models.Model):
                         product_templ_obj.create(product_vals)
         return True
 
-    @api.multi
     def sync_vtiger_service_products(self):
         for company in self:
             access_key = company.get_vtiger_access_key()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models
@@ -21,11 +20,9 @@ class ResCompany(models.Model):
     user_name = fields.Char('User Name')
     last_sync_date = fields.Datetime('Last Synced Time')
 
-    @api.multi
     def get_vtiger_server_url(self):
         return '%s/%s' % (self.vtiger_server, URL)
 
-    @api.multi
     def get_vtiger_access_key(self):
         """Get the token using 'getchallenge' operation"""
         self.ensure_one()
@@ -40,7 +37,6 @@ class ResCompany(models.Model):
                                   self.access_key.encode('utf-8'))
         return tokenized_accessKey.hexdigest()
 
-    @api.multi
     def vtiger_login(self, access_key):
         """Using AccessKey tokenized, perform a login operation."""
         self.ensure_one()
@@ -56,7 +52,6 @@ class ResCompany(models.Model):
     def sync_vtiger(self):
         return self.search([]).action_sync_vtiger()
 
-    @api.multi
     def action_sync_vtiger(self):
         self.write({'last_sync_date': datetime.now()})
         return True
