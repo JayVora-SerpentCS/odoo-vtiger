@@ -2,7 +2,7 @@
 
 {
     'name': 'VTiger Purchase Connector',
-    'version': '12.0.1.0.0',
+    'version': '13.0.1.0.0',
     'category': 'Purchases',
     'license': 'AGPL-3',
     'author': 'Serpent Consulting Services Pvt. Ltd.',
