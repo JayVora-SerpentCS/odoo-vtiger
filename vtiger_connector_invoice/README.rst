@@ -1,5 +1,5 @@
 ===========================
-Vtiger Connector Sale order
+Vtiger Connector Invoice
 ===========================
 
 * This module helps to Create or update Invoices
