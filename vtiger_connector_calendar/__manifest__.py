@@ -1,7 +1,7 @@
 # See LICENSE file for full copyright and licensing details.
 
 {
-    'name': 'VTiger Calender Connector',
+    'name': 'VTiger Calendar Connector',
     'version': '13.0.1.0.0',
     'category': 'Marketing',
     'license': 'AGPL-3',
