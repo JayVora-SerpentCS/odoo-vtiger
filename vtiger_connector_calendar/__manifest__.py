@@ -13,4 +13,5 @@
     'data': ['views/res_company_view.xml',
              'views/calendar_views.xml'],
     'installable': True,
+    'images': ['static/description/banner.jpg'],
 }
