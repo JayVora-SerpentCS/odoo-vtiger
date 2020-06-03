@@ -13,5 +13,5 @@
     'data': ['views/res_company_view.xml',
              'views/project_view.xml'],
     'installable': True,
-    'images': ['static/description/banner.jpg'],
+    'images': ['static/description/banner.png'],
 }
