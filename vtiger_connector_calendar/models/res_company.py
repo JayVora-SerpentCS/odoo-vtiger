@@ -57,26 +57,12 @@ class ResCompany(models.Model):
                     if get_start_date and get_end_date and \
                        get_start_date > get_end_date:
                         calendar_vals.update({'start': str(start_date)})
-#                                             'stop': start_date,
                     if get_start_date and get_end_date and \
                        get_start_date < get_end_date:
-
                         calendar_vals.update(
                             {'start': str(start_date),
                              'stop': str(end_date),
                              'allday': True})
-#                    temp_calendar_vals1.update({
-#                         'start': end_date,
-#                         'stop': start_date,
-#                         'name': 'dfdfdfd',
-#                         'duration':0.0,
-#                    })
-#                    if get_start_date and get_end_date and\
-#                       get_start_date > get_end_date:
-#                        calendar_vals.update({
-#                             'start': start_date,
-#                             'stop': start_date,
-#                        })
                     else:
                         split_time = str(get_start_time).split(':')
                         hour = int(split_time[0])
@@ -89,27 +75,11 @@ class ResCompany(models.Model):
                         date_stp = date_s + timedelta(days=1)
                         calendar_vals.update({
                             'start': str(date_s),
-                            # 'start_datetime': str(date_s),
                             'allday': False})
                         if not calendar_vals.get('stop'):
                             calendar_vals.update(
                                 {'stop': str(date_stp),
-                                 # 'stop_datetime': str(date_stp)
                                  })
-#                        temp_calendar_vals.update({
-#                            'start_datetime': date_s,
-#                            'duration': total_duration,
-#                            'start': start_date,
-#                            'stop': start_date,
-#                            'allday': False,
-#                        })
-#                    user_id = res.get('assigned_user_id')
-#                    if user_id:
-#                        user = user_obj.search(
-#                            [('vtiger_id', '=', user_id)], limit=1
-#                        )
-#                        if user:
-#                            calendar_vals.update({'partner_id': partner.id})
                     # Search for existing sale order
                     calendar_event = calendar_obj.search(
                         [('vtiger_id', '=', res.get('id'))], limit=1

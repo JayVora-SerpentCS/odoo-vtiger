@@ -75,14 +75,12 @@ class ResCompany(models.Model):
                             if partner:
                                 po_order_vals.update(
                                     {'partner_id': partner.id})
-                        # date_o = res.get('createdtime')
                         date_o = line_req_json['result']['createdtime']
                         if date_o:
                             awe = str(date_o)
                             date_frm = datetime.strptime(awe, DT)
                             date_order = date_frm.strftime(DT)
                             po_order_vals.update({'date_order': date_order})
-                        # date_modified = res.get('modifiedtime')
                         date_modified = line_req_json['result']['modifiedtime']
                         if date_modified:
                             modified = str(date_modified)

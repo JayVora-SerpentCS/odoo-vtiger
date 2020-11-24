@@ -3,7 +3,6 @@
 import json
 from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
-from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DT
 from datetime import datetime
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode

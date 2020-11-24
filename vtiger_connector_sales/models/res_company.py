@@ -8,8 +8,6 @@ from datetime import datetime
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 import requests
-from requests.auth import HTTPBasicAuth
-
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
@@ -82,7 +80,6 @@ class ResCompany(models.Model):
                     so_order_vals = {}
 
                     if not order_id:
-                        # contact_id = line_req_json.get('contact_id')
                         contact_id = line_req_json['result']['contact_id']
                         if contact_id:
                             partner = partner_obj.search(
@@ -90,7 +87,6 @@ class ResCompany(models.Model):
                             if partner:
                                 so_order_vals.update(
                                     {'partner_id': partner.id})
-                        # date_o = line_req_json.get('createdtime')
                         date_o = line_req_json['result']['createdtime']
                         if date_o:
                             awe = str(date_o)
@@ -98,14 +94,12 @@ class ResCompany(models.Model):
                             date_order = date_frm.strftime(DT)
                             so_order_vals.update(
                                 {'date_order': date_order})
-                        # date_due = line_req_json.get('duedate')
                         date_due = line_req_json['result']['duedate']
                         if date_due:
                             dat_due = str(date_due)
                             date_format = datetime.strptime(dat_due, DF)
                             so_order_vals.update(
                                 {'validity_date': date_format})
-                        # opportunity_id = line_req_json.get('potential_id')
                         opportunity_id = line_req_json[
                             'result']['potential_id']
                         if opportunity_id:
