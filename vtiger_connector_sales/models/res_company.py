@@ -84,7 +84,6 @@ class ResCompany(models.Model):
                         [('vtiger_id', '=', so_id)], limit=1)
                     so_order_vals = {}
                     if not order_id:
-                        # contact_id = res.get('contact_id')
                         contact_id = line_req_json['result']['contact_id']
                         if contact_id:
                             partner = partner_obj.search(
@@ -92,7 +91,6 @@ class ResCompany(models.Model):
                             if partner:
                                 so_order_vals.update(
                                     {'partner_id': partner.id})
-                        # date_o = res.get('createdtime')
                         date_o = line_req_json['result']['createdtime']
                         if date_o:
                             awe = str(date_o)
@@ -101,14 +99,12 @@ class ResCompany(models.Model):
                             so_order_vals.update(
                                 {'date_order': date_order,
                                  'confirmation_date': date_order})
-                        # date_due = res.get('duedate')
                         date_due = line_req_json['result']['duedate']
                         if date_due:
                             dat_due = str(date_due)
                             date_format = datetime.strptime(dat_due, DF)
                             so_order_vals.update(
                                 {'validity_date': date_format})
-                        # opportunity_id = res.get('potential_id')
                         opportunity_id = line_req_json[
                             'result']['potential_id']
                         if opportunity_id:
