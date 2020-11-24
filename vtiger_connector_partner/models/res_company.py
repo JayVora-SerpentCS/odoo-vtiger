@@ -32,7 +32,6 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
-            print ("=====result=====", result)
             if result.get('success'):
                 partner_obj = self.env['res.partner']
                 country_obj = self.env['res.country']
@@ -41,7 +40,7 @@ class ResCompany(models.Model):
                         'name': res.get('firstname', '') + ' ' +
                         res.get('lastname', ''),
                         'email': res.get('email'),
-                        'customer_rank': 1,
+                        # 'customer_rank': 1,
                         'street': res.get('mailingstreet'),
                         'city': res.get('mailingcity'),
                         'zip': res.get('mailingzip'),
@@ -95,7 +94,7 @@ class ResCompany(models.Model):
                         'name': res.get('vendorname'),
                         'email': res.get('email'),
                         'website': res.get('website'),
-                        'supplier_rank': 1,
+                        # 'supplier_rank': 1,
                         'street': res.get('street'),
                         'city': res.get('city'),
                         'zip': res.get('postalcode'),
@@ -149,8 +148,8 @@ class ResCompany(models.Model):
                         'name': res.get('accountname'),
                         'email': res.get('email1'),
                         'website': res.get('website'),
-                        'supplier_rank': 1,
-                        'customer_rank': 1,
+                        # 'supplier_rank': 1,
+                        # 'customer_rank': 1,
                         'street': res.get('bill_street'),
                         'city': res.get('bill_city'),
                         'zip': res.get('bill_code'),
