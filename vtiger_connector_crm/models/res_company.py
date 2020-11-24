@@ -43,12 +43,10 @@ class ResCompany(models.Model):
                         'email_from': res.get('email'),
                         'probability': float(res.get('probability')) or 0.0,
                         'date_deadline': res.get('closingdate'),
-                        'planned_revenue': res.get('forecast_amount'),
+                        'expected_revenue': res.get('forecast_amount'),
                         'description': res.get('description'),
                         'activity_summary': res.get('nextstep'),
                         'priority': res.get('starred', '')}
-#                        'source_id': res.get('source'),
-#                        'stage_id': res.get('sales_stage'),
                     contact_id = res.get('contact_id')
                     if contact_id:
                         partner = partner_obj.search(

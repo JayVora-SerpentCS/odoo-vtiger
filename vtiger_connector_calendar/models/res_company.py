@@ -38,7 +38,6 @@ class ResCompany(models.Model):
                 for res in result.get('result', []):
                     calendar_vals = {
                         'name': res.get('subject'),
-                        'state': 'draft',
                     }
                     if res.get('recurringtype') != '--None--':
                         calendar_vals.update(
@@ -90,12 +89,13 @@ class ResCompany(models.Model):
                         date_stp = date_s + timedelta(days=1)
                         calendar_vals.update({
                             'start': str(date_s),
-                            'start_datetime': str(date_s),
+                            # 'start_datetime': str(date_s),
                             'allday': False})
                         if not calendar_vals.get('stop'):
                             calendar_vals.update(
                                 {'stop': str(date_stp),
-                                 'stop_datetime': str(date_stp)})
+                                 # 'stop_datetime': str(date_stp)
+                                 })
 #                        temp_calendar_vals.update({
 #                            'start_datetime': date_s,
 #                            'duration': total_duration,
