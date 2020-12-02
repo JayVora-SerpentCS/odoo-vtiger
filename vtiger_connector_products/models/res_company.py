@@ -1,7 +1,6 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
-
 from odoo import api, models
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode

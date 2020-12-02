@@ -2,7 +2,7 @@
 
 {
     'name': 'VTiger Projects Connector',
-    'version': '13.0.1.0.0',
+    'version': '14.0.1.0.0',
     'category': 'Project',
     'license': 'AGPL-3',
     'author': 'Serpent Consulting Services Pvt. Ltd.',
