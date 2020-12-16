@@ -33,8 +33,11 @@ class ResCompany(models.Model):
 
     @api.multi
     def sync_vtiger_purchase_order(self):
-        ''' Here call the second API bacause vitiger Changed there api and 
-        without using seocnd API Multiple Purchase_order_line is not synchronize with odoo'''
+        ''' Here call the second API bacause vitiger
+            Changed there api and without using
+            seocnd API Multiple Purchase_order_line
+            is not synchronize with odoo'''
+
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()
@@ -117,5 +120,5 @@ class ResCompany(models.Model):
                             'date_planned': order_id.date_order}
                         order_line.append((0, 0, order_line_vals))
                     if order_id:
-                            order_id.write({'order_line': order_line})
+                        order_id.write({'order_line': order_line})
         return True
