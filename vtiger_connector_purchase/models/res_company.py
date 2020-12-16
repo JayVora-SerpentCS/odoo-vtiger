@@ -9,7 +9,6 @@ from datetime import datetime
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 import requests
-from requests.auth import HTTPBasicAuth
 
 
 class ResCompany(models.Model):
@@ -34,6 +33,8 @@ class ResCompany(models.Model):
 
     @api.multi
     def sync_vtiger_purchase_order(self):
+        ''' Here call the second API bacause vitiger Changed there api and 
+        without using seocnd API Multiple Purchase_order_line is not synchronize with odoo'''
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()

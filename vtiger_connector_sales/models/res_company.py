@@ -33,18 +33,6 @@ class ResCompany(models.Model):
         return True
 
     @api.multi
-    def update_existing_sale_Quotes(self, result):
-        '''Added the Method for the Work Existing order line,
-           Because the Vtiger return dictionary'''
-        sale_order_obj = self.env['sale.order']
-        for res in result.get('result', []):
-            order_id = sale_order_obj.search(
-                [('vtiger_id', '=', res.get('id'))], limit=1)
-            if order_id:
-                order_id.order_line.unlink()
-        return True
-
-    @api.multi
     def sync_vtiger_sale_order(self):
         for company in self:
             # Synchronise Partner
@@ -167,7 +155,7 @@ class ResCompany(models.Model):
             lead_obj = self.env['crm.lead']
             product_obj = self.env['product.product']
             if result.get('success'):
-                self.update_existing_sale_Quotes(result)
+                self.update_existing_sale_order(result)
                 for res in result.get('result', []):
                     if res.get('quotestage') == 'New':
                         so_id = res.get('id')
