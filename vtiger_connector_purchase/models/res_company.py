@@ -8,6 +8,7 @@ from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DT
 from datetime import datetime
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
+import requests
 
 
 class ResCompany(models.Model):
@@ -32,6 +33,9 @@ class ResCompany(models.Model):
 
     @api.multi
     def sync_vtiger_purchase_order(self):
+        purchase_order_obj = self.env['purchase.order']
+        partner_obj = self.env['res.partner']
+        product_obj = self.env['product.product']
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()
@@ -53,30 +57,37 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
-            purchase_order_obj = self.env['purchase.order']
-            partner_obj = self.env['res.partner']
-            product_obj = self.env['product.product']
             if result.get('success'):
                 self.update_existing_order(result)
                 for res in result.get('result', []):
+                    po_id = res.get('id')
+                    line_url = company.vtiger_server
+                    '''Here call the second API bacause vitiger
+                    Changed there api and without using
+                    seocnd API Multiple Purchase_order_line
+                    is not synchronize with odoo'''
+                    line_url += "/restapi/v1/vtiger/default/retrieve?id=" + po_id
+                    line_req = requests.get(line_url, auth=(
+                        company.user_name, company.access_key))
+                    line_req_json = line_req.json()
                     order_id = purchase_order_obj.search(
-                        [('vtiger_id', '=', res.get('id'))], limit=1)
+                        [('vtiger_id', '=', po_id)], limit=1)
                     po_order_vals = {}
                     if not order_id:
-                        contact_id = res.get('vendor_id')
+                        contact_id = line_req_json['result']['vendor_id']
                         if contact_id:
                             partner = partner_obj.search(
                                 [('vtiger_id', '=', contact_id)], limit=1)
                             if partner:
                                 po_order_vals.update(
                                     {'partner_id': partner.id})
-                        date_o = res.get('createdtime')
+                        date_o = line_req_json['result']['createdtime']
                         if date_o:
                             awe = str(date_o)
                             date_frm = datetime.strptime(awe, DT)
                             date_order = date_frm.strftime(DT)
                             po_order_vals.update({'date_order': date_order})
-                        date_modified = res.get('modifiedtime')
+                        date_modified = line_req_json['result']['createdtime']
                         if date_modified:
                             modified = str(date_modified)
                             modified_date = datetime.strptime(modified, DT)
@@ -84,26 +95,29 @@ class ResCompany(models.Model):
                             po_order_vals.update(
                                 {'date_planned': date_planned})
                         po_order_vals.update(
-                            {'vtiger_id': res.get('id'),
-                             'notes': res.get('terms_conditions')}),
+                            {'vtiger_id': line_req_json['result']['id'],
+                             'notes': line_req_json['result']['terms_conditions']}),
                         order_id = purchase_order_obj.create(po_order_vals)
-                    product_id = res.get('productid')
-                    if product_id:
-                        product = product_obj.search(
-                            [('vtiger_id', '=', product_id)], limit=1)
-                    price_unit = res.get('listprice')
-                    netprice = res.get('hdnGrandTotal')
-                    quantity = res.get('quantity')
-                    order_line_vals = {
-                        'name': res.get('comment'),
-                        'product_id': product and product.id or False,
-                        'product_uom': product.uom_id.id,
-                        'product_qty': float(quantity),
-                        'price_unit': float(price_unit),
-                        'price_subtotal': float(netprice),
-                        'order_id': order_id.id,
-                        'date_planned': order_id.date_order}
+
+                    order_line = []
+                    for line in line_req_json['result']['LineItems']:
+                        product_id = line.get('productid')
+                        if product_id:
+                            product = product_obj.search(
+                                [('vtiger_id', '=', product_id)], limit=1)
+                        price_unit = line.get('listprice')
+                        netprice = line.get('netprice')
+                        quantity = line.get('quantity')
+                        order_line_vals = {
+                            'name': line.get('comment'),
+                            'product_id': product and product.id or False,
+                            'product_uom': product.uom_id.id,
+                            'product_qty': float(quantity),
+                            'price_unit': float(price_unit),
+                            'price_subtotal': float(netprice),
+                            'order_id': order_id.id,
+                            'date_planned': order_id.date_order}
+                        order_line.append((0, 0, order_line_vals))
                     if order_id:
-                        order_id.write(
-                            {'order_line': [(0, 0, order_line_vals)]})
+                        order_id.write({'order_line': order_line})
         return True
