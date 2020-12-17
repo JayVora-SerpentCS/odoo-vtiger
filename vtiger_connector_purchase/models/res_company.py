@@ -33,11 +33,9 @@ class ResCompany(models.Model):
 
     @api.multi
     def sync_vtiger_purchase_order(self):
-        ''' Here call the second API bacause vitiger
-            Changed there api and without using
-            seocnd API Multiple Purchase_order_line
-            is not synchronize with odoo'''
-
+        purchase_order_obj = self.env['purchase.order']
+        partner_obj = self.env['res.partner']
+        product_obj = self.env['product.product']
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()
@@ -59,14 +57,15 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
-            purchase_order_obj = self.env['purchase.order']
-            partner_obj = self.env['res.partner']
-            product_obj = self.env['product.product']
             if result.get('success'):
                 self.update_existing_order(result)
                 for res in result.get('result', []):
                     po_id = res.get('id')
                     line_url = company.vtiger_server
+                    '''Here call the second API bacause vitiger
+                    Changed there api and without using
+                    seocnd API Multiple Purchase_order_line
+                    is not synchronize with odoo'''
                     line_url += "/restapi/v1/vtiger/default/retrieve?id=" + po_id
                     line_req = requests.get(line_url, auth=(
                         company.user_name, company.access_key))
