@@ -9,7 +9,7 @@
     'author': 'Serpent Consulting Services Pvt. Ltd.',
     'maintainer': 'Serpent Consulting Services Pvt. Ltd.',
     'website': 'https://www.serpentcs.com',
-    'depends': ['sale',
+    'depends': ['sale_management',
                 'vtiger_connector_products',
                 'vtiger_connector_partner',
                 'vtiger_connector_crm'],
