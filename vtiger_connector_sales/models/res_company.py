@@ -10,7 +10,7 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 import requests
 from requests.auth import HTTPBasicAuth
-
+from odoo.exceptions import UserError, ValidationError
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
@@ -28,7 +28,7 @@ class ResCompany(models.Model):
         for res in result.get('result', []):
             order_id = sale_order_obj.search(
                 [('vtiger_id', '=', res.get('id'))], limit=1)
-            if order_id:
+            if order_id and order_id.state == 'draft':
                 order_id.order_line.unlink()
         return True
 
@@ -79,6 +79,8 @@ class ResCompany(models.Model):
                             if partner:
                                 so_order_vals.update(
                                     {'partner_id': partner.id})
+                        else:
+                            continue
                         date_o = line_req_json['result']['createdtime']
                         if date_o:
                             awe = str(date_o)
@@ -123,7 +125,7 @@ class ResCompany(models.Model):
                             'price_subtotal': float(netprice),
                             'order_id': order_id.id}
                         order_line.append((0, 0, order_line_vals))
-                    if order_id:
+                    if order_id and order_id.state != 'sale':
                         order_id.write({
                             'order_line': order_line})
                     if res.get('sostatus') == 'Approved':

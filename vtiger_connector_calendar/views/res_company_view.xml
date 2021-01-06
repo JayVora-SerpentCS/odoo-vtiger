@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="vtiger_connector_base.view_vtiger_company_form"/>
         <field name="arch" type="xml">
             <group name="vtiger_details" position="after">
-                <button name="sync_vtiger_calendar_event" string="Sync Calendar Evet(s)" type="object" class="vtiger_button"/>
+                <button name="sync_vtiger_calendar_event" string="Sync Calendar Event(s)" type="object" class="vtiger_button"/>
             </group>
         </field>
     </record>
