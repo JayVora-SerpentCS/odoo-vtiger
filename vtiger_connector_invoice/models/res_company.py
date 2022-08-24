@@ -84,7 +84,7 @@ class ResCompany(models.Model):
                                 {'invoice_date_due': date_format})
                         invoice_vals.update(
                             {'vtiger_id': res.get('id'),
-                             'type':'out_invoice',
+                             'move_type':'out_invoice',
                              'narration': res.get('terms_conditions')}),
                         invoice_id = invoice_obj.create(invoice_vals)
                     product = res.get('productid')
