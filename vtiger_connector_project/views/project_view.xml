@@ -6,7 +6,8 @@
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.edit_project"/>
         <field name="arch" type="xml">
-            <xpath expr ="//div[@name='options_active']" position ="after">
+            <!-- <xpath expr ="//div[@name='options_active']" position ="after"> -->
+            <xpath expr ="//sheet/div[2]" position ="after">
                 <div name="vtiger">
                     <group>
                         <field name="vtiger_id"/>
