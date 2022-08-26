@@ -6,4 +6,4 @@ from odoo import fields, models
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
-    vtiger_id = fields.Char('VTiger ID', readonly=True)
+    vtiger_id = fields.Char('VTiger ID', readonly=True, copy=False)

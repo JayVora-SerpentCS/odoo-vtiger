@@ -6,4 +6,4 @@ from odoo import fields, models
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    vtiger_id = fields.Char('VTiger ID', readonly=True)
+    vtiger_id = fields.Char('VTiger ID', readonly=True, copy=False)
