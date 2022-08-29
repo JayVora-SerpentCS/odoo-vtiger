@@ -7,8 +7,14 @@ import json
 import requests
 from hashlib import md5
 from datetime import datetime
-from urllib.request import urlopen
-from urllib.parse import urlencode
+from six.moves import urllib
+
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.parse import urlencode
+
+
+# from urllib.request import urlopen
+# from urllib.parse import urlencode
 
 URL = 'webservice.php'
 

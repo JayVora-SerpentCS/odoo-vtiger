@@ -6,8 +6,8 @@ from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DT
 from datetime import datetime
-from urllib.request import urlopen, Request
-from urllib.parse import urlencode
+from six.moves.urllib.request import urlopen, Request
+from six.moves.urllib.parse import urlencode
 
 
 class ResCompany(models.Model):
@@ -65,6 +65,7 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
+            print("\nresult----------------------", result)
             sale_order_obj = self.env['sale.order']
             partner_obj = self.env['res.partner']
             lead_obj = self.env['crm.lead']
