@@ -6,8 +6,10 @@ from odoo import api, models
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DT
 from datetime import datetime
 from datetime import timedelta
-from urllib.request import urlopen, Request
-from urllib.parse import urlencode
+
+
+from six.moves.urllib.request import urlopen, Request
+from six.moves.urllib.parse import urlencode
 
 
 class ResCompany(models.Model):

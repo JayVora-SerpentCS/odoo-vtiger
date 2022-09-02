@@ -13,6 +13,7 @@
                         <field name="vtiger_server" placeholder="https://example.com"/>
                         <field name="user_name" placeholder="example@test.com"/>
                         <field name="last_sync_date"/>
+                        <field name="vtiger_admin_id"/>
                     </group>
                 </page>
             </notebook>

@@ -7,8 +7,9 @@ import json
 import requests
 from hashlib import md5
 from datetime import datetime
-from urllib.request import urlopen
-from urllib.parse import urlencode
+
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.parse import urlencode
 
 URL = 'webservice.php'
 
@@ -20,6 +21,7 @@ class ResCompany(models.Model):
     vtiger_server = fields.Char('VTiger Server')
     user_name = fields.Char('User Name')
     last_sync_date = fields.Datetime('Last Synced Time')
+    vtiger_admin_id = fields.Char("Vtiger Admin Id")
 
     @api.multi
     def get_vtiger_server_url(self):
@@ -49,8 +51,12 @@ class ResCompany(models.Model):
                   'accessKey': access_key}
         url = self.get_vtiger_server_url()
         response = requests.post(url=url, data=values).json()
+        if response.get('success', False) and not self.vtiger_admin_id:
+            if response.get('result') and response['result'].get('userId'):
+                self.vtiger_admin_id = response['result'].get('userId')
         # Return sessionName
         return response['result']['sessionName']
+
 
     @api.model
     def sync_vtiger(self):
