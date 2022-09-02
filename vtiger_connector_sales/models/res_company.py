@@ -65,7 +65,6 @@ class ResCompany(models.Model):
             req = Request('%s?%s' % (url, data))
             response = urlopen(req)
             result = json.loads(response.read())
-            print("\nresult----------------------", result)
             sale_order_obj = self.env['sale.order']
             partner_obj = self.env['res.partner']
             lead_obj = self.env['crm.lead']
