@@ -6,4 +6,4 @@ from odoo import fields, models
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    vtiger_id = fields.Char('VTiger ID', readonly=True)
+    vtiger_id = fields.Char('VTiger ID', readonly=True, copy=False)
