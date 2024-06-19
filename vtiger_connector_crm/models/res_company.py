@@ -1,7 +1,6 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
-
 from odoo import api, models
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -15,6 +14,8 @@ class ResCompany(models.Model):
         return self.sync_vtiger_crm()
 
     def sync_vtiger_crm(self):
+        crm_obj = self.env['crm.lead']
+        partner_obj = self.env['res.partner']
         for company in self:
             # Synchronise Partner
             company.sync_vtiger_partner()
@@ -35,8 +36,6 @@ class ResCompany(models.Model):
             response = urlopen(req)
             result = json.loads(response.read())
             if result.get('success'):
-                crm_obj = self.env['crm.lead']
-                partner_obj = self.env['res.partner']
                 for res in result.get('result', []):
                     crm_vals = {
                         'name': res.get('potentialname', ''),
@@ -47,8 +46,6 @@ class ResCompany(models.Model):
                         'description': res.get('description'),
                         'activity_summary': res.get('nextstep'),
                         'priority': res.get('starred', '')}
-#                        'source_id': res.get('source'),
-#                        'stage_id': res.get('sales_stage'),
                     contact_id = res.get('contact_id')
                     if contact_id:
                         partner = partner_obj.search(
