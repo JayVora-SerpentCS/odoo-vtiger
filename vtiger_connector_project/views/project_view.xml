@@ -35,4 +35,33 @@
         </field>
     </record>
 
+    <record id="view_vtiger_project_task_form" model="ir.ui.view">
+        <field name="name">project.task.vtiger.form</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2" />
+        <field name="arch" type="xml">
+            <xpath expr="(//field[@name='partner_id'])[1]" position="after">
+                <field name="vtiger_id" readonly="1" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_vtiger_project_task_search" model="ir.ui.view">
+        <field name="name">project.task.vtiger.search</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_search_form" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vtiger_id" />
+            </field>
+            <filter name="my_tasks" position="after">
+                <filter
+                    string="Synced From Vtiger"
+                    name="vtiger"
+                    domain="[('vtiger_id', '!=', False)]"
+                />
+            </filter>
+        </field>
+    </record>
+
 </odoo>

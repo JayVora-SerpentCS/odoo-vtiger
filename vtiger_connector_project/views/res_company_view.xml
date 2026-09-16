@@ -8,8 +8,8 @@
         <field name="arch" type="xml">
             <group name="vtiger_details" position="after">
                 <button
-                    name="sync_vtiger_project"
-                    string="Sync Projects(s)"
+                    name="sync_vtiger_project_task"
+                    string="Sync Project(s) and Task(s)"
                     type="object"
                     class="vtiger_button"
                 />

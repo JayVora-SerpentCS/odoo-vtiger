@@ -7,3 +7,9 @@ class ProjectProject(models.Model):
     _inherit = "project.project"
 
     vtiger_id = fields.Char("VTiger ID", readonly=True, copy=False)
+
+
+class ProjectTask(models.Model):
+    _inherit = "project.task"
+
+    vtiger_id = fields.Char("VTiger ID", readonly=True, copy=False)

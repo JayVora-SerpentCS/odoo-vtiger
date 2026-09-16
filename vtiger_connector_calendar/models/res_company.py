@@ -1,16 +1,73 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from odoo import models
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DT
+from odoo import fields, models
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class ResCompany(models.Model):
     _inherit = "res.company"
+
+    def _vtiger_to_bool(self, value):
+        return value is True or str(value).lower() in ("1", "true", "yes", "on")
+
+    def _parse_vtiger_date(self, value):
+        if not value:
+            return False
+        for date_format in (DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT):
+            try:
+                return datetime.strptime(value, date_format).date()
+            except ValueError:
+                continue
+        return False
+
+    def _parse_vtiger_time(self, value):
+        if not value:
+            return time()
+        for time_format in ("%H:%M:%S", "%H:%M", "%I:%M:%S %p", "%I:%M %p"):
+            try:
+                return datetime.strptime(str(value).strip(), time_format).time()
+            except ValueError:
+                continue
+        return time()
+
+    def _prepare_vtiger_calendar_values(self, res):
+        start_date = self._parse_vtiger_date(res.get("date_start"))
+        end_date = self._parse_vtiger_date(res.get("due_date")) or start_date
+        if not start_date:
+            return {}
+
+        if self._vtiger_to_bool(res.get("allday")) or self._vtiger_to_bool(
+            res.get("notime")
+        ):
+            return {
+                "start": datetime.combine(start_date, time(hour=8)),
+                "stop": datetime.combine(end_date, time(hour=18)),
+                "start_date": start_date,
+                "stop_date": end_date,
+                "allday": True,
+            }
+
+        start_time = self._parse_vtiger_time(res.get("time_start"))
+        end_time = self._parse_vtiger_time(res.get("time_end"))
+        start_datetime = datetime.combine(start_date, start_time)
+        stop_datetime = datetime.combine(end_date, end_time)
+
+        if stop_datetime <= start_datetime:
+            duration_hours = float(res.get("duration_hours") or 0.0)
+            duration_minutes = float(res.get("duration_minutes") or 0.0)
+            duration = timedelta(hours=duration_hours, minutes=duration_minutes)
+            stop_datetime = start_datetime + (duration or timedelta(hours=1))
+
+        return {
+            "start": fields.Datetime.to_string(start_datetime),
+            "stop": fields.Datetime.to_string(stop_datetime),
+            "allday": False,
+        }
 
     def action_sync_vtiger(self):
         self.sync_vtiger_calendar_event()
@@ -47,41 +104,7 @@ class ResCompany(models.Model):
                                 "rrule_type": res.get("recurringtype", "").lower(),
                             }
                         )
-                    get_start_time = res.get("time_start")
-                    get_start_date = res.get("date_start")
-                    if get_start_date:
-                        get_date = get_start_date
-                        start_date = datetime.strptime(get_date, DT)
-                    get_end_date = res.get("due_date")
-                    if get_end_date:
-                        get_en_date = get_end_date
-                        end_date = datetime.strptime(get_en_date, DT)
-                    if (
-                            get_start_date
-                            and get_end_date
-                            and get_start_date > get_end_date
-                    ):
-                        calendar_vals.update({"start": start_date})
-                    if (
-                            get_start_date
-                            and get_end_date
-                            and get_start_date < get_end_date
-                    ):
-                        calendar_vals.update(
-                            {"start": start_date, "stop": end_date, "allday": True}
-                        )
-                    else:
-                        split_time = str(get_start_time).split(":")
-                        hour = int(split_time[0])
-                        minute = int(split_time[1])
-                        second = int(split_time[2])
-                        date_s = start_date + timedelta(
-                            hours=hour, minutes=minute, seconds=second
-                        )
-                        date_stp = date_s + timedelta(days=1)
-                        calendar_vals.update({"start": str(date_s), "allday": False})
-                        if not calendar_vals.get("stop"):
-                            calendar_vals.update({"stop": date_stp})
+                    calendar_vals.update(company._prepare_vtiger_calendar_values(res))
                     calendar_event = calendar_obj.search(
                         [("vtiger_id", "=", res.get("id"))], limit=1
                     )

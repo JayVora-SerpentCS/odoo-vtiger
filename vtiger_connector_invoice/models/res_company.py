@@ -1,7 +1,6 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
-from os.path import exists
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -51,19 +50,85 @@ class ResCompany(models.Model):
         response = urlopen(req, timeout=20)
         return json.loads(response.read())
 
+    def _get_vtiger_record_by_id(self, company, vtiger_module, vtiger_id):
+        if not vtiger_id:
+            return {}
+        access_key = company.get_vtiger_access_key()
+        session_name = company.vtiger_login(access_key)
+        qry = "SELECT * FROM %s WHERE id = '%s';" % (vtiger_module, vtiger_id)
+        result = self._execute_vtiger_query_invoice(company, qry, session_name)
+        if result.get("success") and result.get("result"):
+            return result["result"][0]
+        return {}
+
+    def _convert_country(self, partner_vals):
+        country_value = partner_vals.get("country_id")
+        if country_value:
+            country = self.env["res.country"].search(
+                [
+                    "|",
+                    ("name", "=", country_value),
+                    ("code", "=", country_value),
+                ],
+                limit=1,
+            )
+            partner_vals["country_id"] = country.id if country else False
+        return partner_vals
+
+    def _sync_invoice_partner_record(self, company, vtiger_module, vtiger_id):
+        partner_obj = self.env["res.partner"]
+        partner = partner_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+        if partner:
+            return partner
+
+        vtiger_record = self._get_vtiger_record_by_id(company, vtiger_module, vtiger_id)
+        if not vtiger_record:
+            return partner_obj
+
+        if vtiger_module == "Contacts":
+            partner_vals = company.contact_vals(vtiger_record)
+            company._upsert_vtiger_partner(
+                self._convert_country(partner_vals), vtiger_id
+            )
+        else:
+            partner_vals = company.account_vals(vtiger_record)
+            company._upsert_vtiger_partner(
+                self._convert_country(partner_vals), vtiger_id, is_company=True
+            )
+        return partner_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+
     def _get_partner(self, res, company):
         """sync partner data."""
         partner_obj = self.env["res.partner"]
         if res.get("contact_id"):
-            partner = partner_obj.search(
-                [("vtiger_id", "=", res.get("contact_id"))], limit=1
+            partner = self._sync_invoice_partner_record(
+                company, "Contacts", res.get("contact_id")
             )
-            if not partner:
-                company.sync_vtiger_partner()
-                partner = partner_obj.search(
-                    [("vtiger_id", "=", res.get("contact_id"))], limit=1
-                )
-            return partner
+            if partner:
+                return partner
+        if res.get("account_id"):
+            return self._sync_invoice_partner_record(
+                company, "Accounts", res.get("account_id")
+            )
+        return partner_obj
+
+    def _prepare_invoice_values(self, res, partner):
+        invoice_vals = {}
+        if partner:
+            invoice_vals["partner_id"] = partner.id
+        date_invoice = res.get("invoicedate")
+        if date_invoice:
+            invoice_vals.update({"invoice_date": date_invoice})
+        date_due = res.get("duedate")
+        if date_due:
+            invoice_vals.update({"invoice_date_due": date_due})
+        invoice_vals.update(
+            {
+                "move_type": "out_invoice",
+                "narration": res.get("terms_conditions"),
+            }
+        )
+        return invoice_vals
 
     def _sync_invoice_lines(self, res, invoice_id, company):
         """Sync invoice lines."""
@@ -75,12 +140,19 @@ class ResCompany(models.Model):
             if type(order_line_dict) != dict:
                 order_line_dict = res.get("lineItems").get(order_line_dict)
             product = order_line_dict.get("productid")
-            if product:
-                product = product_obj.search([("vtiger_id", "=", product)], limit=1)
-                if not product:
-                    company.sync_vtiger_products(
-                        company, vtiger_type=["Products", "Services"]
-                    )
+            if not product:
+                continue
+            product = product_obj.search([("vtiger_id", "=", product)], limit=1)
+            if not product:
+                company.sync_vtiger_products(
+                    company, vtiger_type=["Products", "Services"]
+                )
+                product = product_obj.search(
+                    [("vtiger_id", "=", order_line_dict.get("productid"))],
+                    limit=1,
+                )
+            if not product:
+                continue
             accounts = product.product_tmpl_id.get_product_accounts()
             price_unit = order_line_dict.get("listprice")
             quantity = order_line_dict.get("quantity")
@@ -131,7 +203,6 @@ class ResCompany(models.Model):
 
     def sync_vtiger_invoice(self):
         invoice_obj = self.env["account.move"]
-        partner_obj = self.env["res.partner"]
         user_obj = self.env["res.users"]
         for company in self:
             access_key = company.get_vtiger_access_key()
@@ -142,20 +213,16 @@ class ResCompany(models.Model):
                 self.delete_existing_invoice(result)
                 for res in result.get("result", []):
                     # _get_partner will sync partner, if not exist
-                    self._get_partner(res, company)
-                    invoice_vals = {}
+                    partner = self._get_partner(res, company)
+                    invoice_vals = self._prepare_invoice_values(res, partner)
                     invoice_id = invoice_obj.search(
                         [("vtiger_id", "=", res.get("id"))], limit=1
                     )
-                    if not invoice_id:
-                        contact_id = res.get("contact_id")
-                        if contact_id:
-                            partner = partner_obj.search(
-                                [("vtiger_id", "=", contact_id)], limit=1
-                            )
-                            if partner:
-                                invoice_vals.update({"partner_id": partner.id})
-                        else:
+                    if invoice_id:
+                        if invoice_id.state == "draft":
+                            invoice_id.write(invoice_vals)
+                    else:
+                        if not invoice_vals.get("partner_id"):
                             vtiger_user = user_obj.search(
                                 [("login", "=", "vtigeruser@vtiger")]
                             )
@@ -169,19 +236,11 @@ class ResCompany(models.Model):
                             invoice_vals.update(
                                 {"partner_id": vtiger_user.partner_id.id}
                             )
-                        date_invoice = res.get("invoicedate")
-                        if date_invoice:
-                            invoice_vals.update({"invoice_date": date_invoice})
-                        date_due = res.get("duedate")
-                        if date_due:
-                            invoice_vals.update({"invoice_date_due": date_due})
                         invoice_vals.update(
                             {
                                 "vtiger_id": res.get("id"),
-                                "move_type": "out_invoice",
-                                "narration": res.get("terms_conditions"),
                             }
-                        ),
+                        )
                         invoice_id = invoice_obj.create(invoice_vals)
 
                     self._sync_invoice_lines(res, invoice_id, company)

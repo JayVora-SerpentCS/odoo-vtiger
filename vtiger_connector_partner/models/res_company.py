@@ -4,19 +4,85 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from odoo import models
+from odoo import fields, models
 
 
 class ResCompany(models.Model):
     _inherit = "res.company"
+
+    last_vtiger_partner_sync_date = fields.Datetime(
+        string="Last VTiger Partner Synced Time"
+    )
+
+    def _search_existing_vtiger_partner(
+        self, partner_vals, vtiger_id, is_company=False
+    ):
+        partner_obj = self.env["res.partner"]
+        base_domain = [("is_company", "=", True)] if is_company else []
+
+        if vtiger_id:
+            partner = partner_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+            if partner:
+                return partner
+
+        for field_name in ("email", "mobile", "phone"):
+            value = partner_vals.get(field_name)
+            if value:
+                partner = partner_obj.search(
+                    base_domain
+                    + [
+                        (field_name, "=ilike", value),
+                        ("vtiger_id", "=", False),
+                    ],
+                    limit=1,
+                )
+                if partner:
+                    return partner
+
+        if partner_vals.get("name"):
+            partner = partner_obj.search(
+                base_domain
+                + [
+                    ("name", "=ilike", partner_vals.get("name")),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+            if partner:
+                return partner
+        return partner_obj
+
+    def _upsert_vtiger_partner(self, partner_vals, vtiger_id, is_company=False):
+        if not vtiger_id:
+            return
+        partner = self._search_existing_vtiger_partner(
+            partner_vals, vtiger_id, is_company=is_company
+        )
+        if partner:
+            if is_company:
+                partner_vals["is_company"] = True
+            if not partner.vtiger_id:
+                partner_vals["vtiger_id"] = vtiger_id
+            partner.write(partner_vals)
+        else:
+            partner_vals.update({"vtiger_id": vtiger_id})
+            if is_company:
+                partner_vals["is_company"] = True
+            self.env["res.partner"].create(partner_vals)
 
     def action_sync_vtiger(self):
         self.sync_vtiger_partner()
         return super(ResCompany, self).action_sync_vtiger()
 
     def contact_vals(self, res):
+        name = " ".join(
+            part for part in (res.get("firstname"), res.get("lastname")) if part
+        )
         return {
-            "name": res.get("firstname", "") + " " + res.get("lastname", ""),
+            "name": name
+            or res.get("email")
+            or res.get("contact_no")
+            or res.get("id"),
             "email": res.get("email"),
             "customer_rank": 1,
             "street": res.get("mailingstreet"),
@@ -30,7 +96,7 @@ class ResCompany(models.Model):
 
     def vandor_vals(self, res):
         return {
-            "name": res.get("vendorname"),
+            "name": res.get("vendorname") or res.get("vendor_no") or res.get("id"),
             "email": res.get("email"),
             "website": res.get("website"),
             "supplier_rank": 1,
@@ -46,7 +112,7 @@ class ResCompany(models.Model):
 
     def account_vals(self, res):
         return {
-            "name": res.get("accountname"),
+            "name": res.get("accountname") or res.get("account_no") or res.get("id"),
             "email": res.get("email1"),
             "website": res.get("website"),
             "supplier_rank": 1,
@@ -60,7 +126,6 @@ class ResCompany(models.Model):
         }
 
     def fetch_data(self, company, vtiger_type):
-        partner_obj = self.env["res.partner"]
         country_obj = self.env["res.country"]
 
         access_key = company.get_vtiger_access_key()
@@ -77,8 +142,10 @@ class ResCompany(models.Model):
             "Accounts": """SELECT * FROM Accounts;""",
         }
 
-        if company.last_sync_date:
-            qry = qry_template[vtiger_type].format(company.last_sync_date)
+        if company.last_vtiger_partner_sync_date:
+            qry = qry_template[vtiger_type].format(
+                company.last_vtiger_partner_sync_date
+            )
         else:
             qry = qry_template_1[vtiger_type]
         values = {"operation": "query", "query": qry, "sessionName": session_name}
@@ -107,40 +174,24 @@ class ResCompany(models.Model):
                             ],
                             limit=1,
                         )
-                        if country:
-                            partner_vals.update({"country_id": country.id})
+                        partner_vals.update(
+                            {"country_id": country.id if country else False}
+                        )
 
                     if vtiger_type == "Accounts":
-                        partner = partner_obj.search(
-                            [
-                                ("vtiger_id", "=", res.get("id")),
-                                ("is_company", "=", "True"),
-                            ],
-                            limit=1,
+                        self._upsert_vtiger_partner(
+                            partner_vals, res.get("id"), is_company=True
                         )
-                        if partner:
-                            partner.write(partner_vals)
-                        else:
-                            partner_vals.update(
-                                {"vtiger_id": res.get("id"), "is_company": True}
-                            )
-                            partner_obj.create(partner_vals)
                     else:
-                        partner = partner_obj.search(
-                            [("vtiger_id", "=", res.get("id"))], limit=1
-                        )
-                        if partner:
-                            partner.write(partner_vals)
-                        else:
-                            partner_vals.update({"vtiger_id": res.get("id")})
-                            partner_obj.create(partner_vals)
+                        self._upsert_vtiger_partner(partner_vals, res.get("id"))
         return True
 
     def sync_vtiger_partner(self):
         for company in self:
-            self.fetch_data(company, vtiger_type="Contacts")
-            self.sync_vtiger_partner_vendor()
-            self.sync_vtiger_partner_organizations()
+            company.fetch_data(company, vtiger_type="Contacts")
+            company.fetch_data(company, vtiger_type="Vendors")
+            company.fetch_data(company, vtiger_type="Accounts")
+            company.last_vtiger_partner_sync_date = fields.Datetime.now()
         return True
 
     def sync_vtiger_partner_vendor(self):
