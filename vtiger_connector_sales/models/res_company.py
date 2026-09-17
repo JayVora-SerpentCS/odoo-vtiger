@@ -14,21 +14,18 @@ class ResCompany(models.Model):
         self.sync_vtiger_sale_order()
         return super(ResCompany, self).action_sync_vtiger()
 
-    def update_existing_sale_order_and_quotes(self, result):
-        """Added the Method for the Work Existing order line,
-        Because the Vtiger return dictionary"""
-        sale_order_obj = self.env["sale.order"]
-        for res in result.get("result", []):
-            order_id = sale_order_obj.search(
-                [("vtiger_id", "=", res.get("id"))], limit=1
-            )
-            if order_id:
-                order_id.order_line.unlink()
+    def update_existing_sale_order_and_quotes(self, order_id):
+        """Refresh lines only for the current editable order."""
+        if order_id and order_id.state in ("draft", "sent"):
+            order_id.order_line.unlink()
         return True
 
     def _build_query_sales(self, company, vtiger_type):
         """Build query based on the last sync date."""
-        if company.last_sync_date:
+        if (
+            company.last_sync_date
+            and not self.env.context.get("vtiger_sales_full_sync")
+        ):
             qry_template = {
                 "SalesOrder": """SELECT * FROM SalesOrder WHERE modifiedtime >= '{}';""",
                 "Quotes": """SELECT * FROM Quotes WHERE modifiedtime >= '{}';""",
@@ -49,6 +46,11 @@ class ResCompany(models.Model):
         response = urlopen(req, timeout=20)
         return json.loads(response.read())
 
+    def _should_confirm_vtiger_sale_order(self, res, vtiger_type):
+        if vtiger_type != "SalesOrder":
+            return False
+        return str(res.get("sostatus", "")).lower() not in ("cancelled", "canceled")
+
     def _sync_sale_order_line(self, res, order_id, company):
         """Sync the order lines from VTiger to Odoo."""
         product_obj = self.env["product.product"]
@@ -65,6 +67,12 @@ class ResCompany(models.Model):
                     company.sync_vtiger_products(
                         company, vtiger_type=["Products", "Services"]
                     )
+                    product = product_obj.search(
+                        [("vtiger_id", "=", order_line_dict.get("productid"))],
+                        limit=1,
+                    )
+                if not product:
+                    continue
                 price_unit = order_line_dict.get("listprice")
                 quantity = order_line_dict.get("quantity")
 
@@ -102,7 +110,7 @@ class ResCompany(models.Model):
                         [("vtiger_id", "=", res.get("id"))], limit=1
                     )
                     if order_id.state != 'sale':
-                        self.update_existing_sale_order_and_quotes(result)
+                        self.update_existing_sale_order_and_quotes(order_id)
                     so_order_vals = {}
                     if not order_id:
                         contact_id = res.get("contact_id")
@@ -157,15 +165,21 @@ class ResCompany(models.Model):
                         order_id = sale_order_obj.create(so_order_vals)
                     if order_id.state != 'sale':
                         self._sync_sale_order_line(res, order_id, company)
-                    if (vtiger_type == "SalesOrder" and res.get("sostatus") == "Approved" and order_id.state != 'sale'):
+                    if (
+                        self._should_confirm_vtiger_sale_order(res, vtiger_type)
+                        and order_id.state in ("draft", "sent")
+                    ):
                         order_id.sudo().action_confirm()
             return True
 
     def sync_vtiger_sale_order(self):
         for company in self:
             if self.env.user.company_id == company:
-                company.fetch_so_and_quotes_data(company, vtiger_type="SalesOrder")
-                company.sync_vtiger_sale_Quotes()
+                sales_company = company.with_context(vtiger_sales_full_sync=True)
+                sales_company.fetch_so_and_quotes_data(
+                    sales_company, vtiger_type="SalesOrder"
+                )
+                sales_company.sync_vtiger_sale_Quotes()
         return True
 
     def sync_vtiger_sale_Quotes(self):

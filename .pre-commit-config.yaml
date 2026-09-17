@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: odoo-vtiger-file-checks
+        name: Odoo VTiger file checks
+        entry: python3 tools/pre_commit_checks.py
+        language: system
+        pass_filenames: true
+        exclude: (^|/)(__pycache__/|static/description/)
+        types_or: [python, xml, yaml, text]
