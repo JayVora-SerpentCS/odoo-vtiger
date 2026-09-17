@@ -6,7 +6,6 @@ import pathlib
 import sys
 import xml.etree.ElementTree as ET
 
-
 SKIP_SUFFIXES = {".pyc", ".png", ".jpg", ".jpeg", ".gif", ".zip", ".ico", ".svg"}
 
 
@@ -66,7 +65,7 @@ def main(argv):
         elif path.suffix == ".xml":
             _check_xml_file(path, errors)
     if errors:
-        print("\n".join(errors))
+        sys.stderr.write("%s\n" % "\n".join(errors))
         return 1
     return 0
 

@@ -167,13 +167,13 @@ class ResCompany(models.Model):
                 "account_id": accounts["income"].id,
             }
             invoice_line_vals_dict.append((0, 0, invoice_line_vals))
-        if res.get("invoicestatus") in ['Created', 'Sent']:
-            invoice_id.state = 'draft'
-        if res.get("invoicestatus") == 'Credit Invoice':
-            invoice_id.move_type = 'out_refund'
+        if res.get("invoicestatus") in ["Created", "Sent"]:
+            invoice_id.state = "draft"
+        if res.get("invoicestatus") == "Credit Invoice":
+            invoice_id.move_type = "out_refund"
         if not invoice_id.state == "posted":
             invoice_id.write({"invoice_line_ids": invoice_line_vals_dict})
-        if res.get("invoicestatus") == 'Paid':
+        if res.get("invoicestatus") == "Paid":
             invoice_id.action_post()
             journal_id = (
                 self.env["account.journal"]
@@ -186,18 +186,16 @@ class ResCompany(models.Model):
                 )
                 .id
             )
-            account_payment_register_rec = (
-                account_payment_register_obj.with_context(
-                    active_model="account.move",
-                    active_ids=[invoice_id.id],
-                ).create(
-                    {
-                        "journal_id": journal_id,
-                        "amount": invoice_id.amount_total,
-                        "payment_date": invoice_id.invoice_date,
-                        "communication": invoice_id.name,
-                    }
-                )
+            account_payment_register_rec = account_payment_register_obj.with_context(
+                active_model="account.move",
+                active_ids=[invoice_id.id],
+            ).create(
+                {
+                    "journal_id": journal_id,
+                    "amount": invoice_id.amount_total,
+                    "payment_date": invoice_id.invoice_date,
+                    "communication": invoice_id.name,
+                }
             )
             account_payment_register_rec.action_create_payments()
 

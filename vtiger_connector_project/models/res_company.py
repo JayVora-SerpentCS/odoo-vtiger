@@ -64,7 +64,9 @@ class ResCompany(models.Model):
     def _get_vtiger_partner(self, company, vtiger_id):
         if not vtiger_id:
             return self.env["res.partner"]
-        partner = self.env["res.partner"].search([("vtiger_id", "=", vtiger_id)], limit=1)
+        partner = self.env["res.partner"].search(
+            [("vtiger_id", "=", vtiger_id)], limit=1
+        )
         if partner:
             return partner
         company.sync_vtiger_partner()
@@ -291,7 +293,10 @@ class ResCompany(models.Model):
             else:
                 queries = [
                     self._build_vtiger_project_query("Tasks", company),
-                    "SELECT * FROM Calendar WHERE modifiedtime >= '%s' AND activitytype = 'Task';"
+                    (
+                        "SELECT * FROM Calendar WHERE modifiedtime >= '%s' "
+                        "AND activitytype = 'Task';"
+                    )
                     % company.last_sync_date
                     if company.last_sync_date
                     else "SELECT * FROM Calendar WHERE activitytype = 'Task';",

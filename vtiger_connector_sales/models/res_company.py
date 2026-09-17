@@ -22,9 +22,8 @@ class ResCompany(models.Model):
 
     def _build_query_sales(self, company, vtiger_type):
         """Build query based on the last sync date."""
-        if (
-            company.last_sync_date
-            and not self.env.context.get("vtiger_sales_full_sync")
+        if company.last_sync_date and not self.env.context.get(
+            "vtiger_sales_full_sync"
         ):
             qry_template = {
                 "SalesOrder": """SELECT * FROM SalesOrder WHERE modifiedtime >= '{}';""",
@@ -88,7 +87,7 @@ class ResCompany(models.Model):
                 if order_id:
                     order_id.write({"order_line": [(0, 0, order_line_vals)]})
 
-    def fetch_so_and_quotes_data(self, company, vtiger_type):
+    def fetch_so_and_quotes_data(self, company, vtiger_type):  # noqa: C901
         sale_order_obj = self.env["sale.order"]
         partner_obj = self.env["res.partner"]
         lead_obj = self.env["crm.lead"]
@@ -109,7 +108,7 @@ class ResCompany(models.Model):
                     order_id = sale_order_obj.search(
                         [("vtiger_id", "=", res.get("id"))], limit=1
                     )
-                    if order_id.state != 'sale':
+                    if order_id.state != "sale":
                         self.update_existing_sale_order_and_quotes(order_id)
                     so_order_vals = {}
                     if not order_id:
@@ -163,12 +162,11 @@ class ResCompany(models.Model):
                                 }
                             ),
                         order_id = sale_order_obj.create(so_order_vals)
-                    if order_id.state != 'sale':
+                    if order_id.state != "sale":
                         self._sync_sale_order_line(res, order_id, company)
-                    if (
-                        self._should_confirm_vtiger_sale_order(res, vtiger_type)
-                        and order_id.state in ("draft", "sent")
-                    ):
+                    if self._should_confirm_vtiger_sale_order(
+                        res, vtiger_type
+                    ) and order_id.state in ("draft", "sent"):
                         order_id.sudo().action_confirm()
             return True
 

@@ -79,10 +79,7 @@ class ResCompany(models.Model):
             part for part in (res.get("firstname"), res.get("lastname")) if part
         )
         return {
-            "name": name
-            or res.get("email")
-            or res.get("contact_no")
-            or res.get("id"),
+            "name": name or res.get("email") or res.get("contact_no") or res.get("id"),
             "email": res.get("email"),
             "customer_rank": 1,
             "street": res.get("mailingstreet"),

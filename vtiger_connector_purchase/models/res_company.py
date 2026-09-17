@@ -94,13 +94,17 @@ class ResCompany(models.Model):
                     po_order_vals = {}
                     if res.get("contact_id"):
                         contact = partner_obj.search(
-                            [("vtiger_id", "=", res.get("contact_id")),
-                             ], limit=1)
+                            [
+                                ("vtiger_id", "=", res.get("contact_id")),
+                            ],
+                            limit=1,
+                        )
                         if not contact:
                             company.sync_vtiger_partner()
                     if res.get("vendor_id"):
                         vendor = partner_obj.search(
-                            [("vtiger_id", "=", res.get("vendor_id"))])
+                            [("vtiger_id", "=", res.get("vendor_id"))]
+                        )
                         if not vendor:
                             company.sync_vtiger_partner()
                     if not order_id:
