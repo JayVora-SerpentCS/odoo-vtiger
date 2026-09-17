@@ -1,0 +1,2 @@
+# This repository currently has no extra Python package requirements.
+# Odoo itself and its dependencies should be installed by the target Odoo setup.
