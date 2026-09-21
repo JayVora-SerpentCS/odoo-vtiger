@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="view_vtiger_product_pricelist_form" model="ir.ui.view">
+        <field name="name">product.pricelist.vtiger.form</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view" />
+        <field name="arch" type="xml">
+            <field name="currency_id" position="after">
+                <field name="vtiger_id" readonly="1" />
+                <field name="vtiger_active" readonly="1" />
+            </field>
+            <field name="item_ids" position="after">
+                <group string="VTiger">
+                    <field name="vtiger_description" readonly="1" />
+                </group>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_vtiger_product_pricelist_search" model="ir.ui.view">
+        <field name="name">product.pricelist.vtiger.search</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view_search" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vtiger_id" />
+            </field>
+            <filter name="inactive" position="after">
+                <filter
+                    string="Synced From Vtiger"
+                    name="vtiger"
+                    domain="[('vtiger_id', '!=', False)]"
+                />
+            </filter>
+        </field>
+    </record>
+
+</odoo>
