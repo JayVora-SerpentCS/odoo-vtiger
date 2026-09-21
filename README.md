@@ -2,17 +2,12 @@
 
 Odoo - vTiger Integration
 
-## vTiger Compatibility
-
-These connector modules are migrated and verified for vTiger version
-`9.26.9.1`.
-
 ## Available addons
 
 <!-- addon-table-start -->
 | addon | version | maintainers | summary |
 | --- | --- | --- | --- |
-| [vtiger_connector_base](vtiger_connector_base) | 18.0.1.0.1 | <a href="https://www.serpentcs.com"><img src="vtiger_connector_base/static/description/images/header-logo.png" alt="Serpent Consulting Services Pvt. Ltd." height="32"/></a> | Base configuration and shared utilities for Odoo and vTiger integration. |
+| [vtiger_connector_base](vtiger_connector_base) | 18.0.1.0.0 | <a href="https://www.serpentcs.com"><img src="vtiger_connector_base/static/description/images/header-logo.png" alt="Serpent Consulting Services Pvt. Ltd." height="32"/></a> | Base configuration and shared utilities for Odoo and vTiger integration. |
 | [vtiger_connector_calendar](vtiger_connector_calendar) | 18.0.1.0.0 | <a href="https://www.serpentcs.com"><img src="vtiger_connector_base/static/description/images/header-logo.png" alt="Serpent Consulting Services Pvt. Ltd." height="32"/></a> | Synchronizes calendar events between Odoo and vTiger. |
 | [vtiger_connector_crm](vtiger_connector_crm) | 18.0.1.0.0 | <a href="https://www.serpentcs.com"><img src="vtiger_connector_base/static/description/images/header-logo.png" alt="Serpent Consulting Services Pvt. Ltd." height="32"/></a> | Connects CRM leads between Odoo and vTiger. |
 | [vtiger_connector_documents](vtiger_connector_documents) | 18.0.1.0.0 | <a href="https://www.serpentcs.com"><img src="vtiger_connector_base/static/description/images/header-logo.png" alt="Serpent Consulting Services Pvt. Ltd." height="32"/></a> | Synchronizes document metadata from vTiger into Odoo. |
