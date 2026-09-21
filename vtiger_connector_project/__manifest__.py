@@ -24,6 +24,7 @@
         Odoo VTiger Projects and Tasks Connector
         """,
     "category": "Project",
+    "sequence": 1,
     "license": "AGPL-3",
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",

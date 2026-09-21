@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="view_vtiger_documents_document_form" model="ir.ui.view">
+        <field name="name">documents.document.vtiger.form</field>
+        <field name="model">documents.document</field>
+        <field name="inherit_id" ref="documents.document_view_form_details" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[1]" position="after">
+                <page string="VTiger">
+                    <group>
+                        <field name="vtiger_id" readonly="1" />
+                        <field name="vtiger_document_no" readonly="1" />
+                        <field name="vtiger_filename" readonly="1" />
+                        <field name="vtiger_filesize" readonly="1" />
+                        <field name="vtiger_filetype" readonly="1" />
+                        <field name="vtiger_folder_id" readonly="1" />
+                        <field name="vtiger_document_source" readonly="1" />
+                        <field name="vtiger_document_type" readonly="1" />
+                        <field name="vtiger_createdtime" readonly="1" />
+                        <field name="vtiger_modifiedtime" readonly="1" />
+                        <field name="vtiger_notecontent" readonly="1" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_vtiger_documents_document_search" model="ir.ui.view">
+        <field name="name">documents.document.vtiger.search</field>
+        <field name="model">documents.document</field>
+        <field name="inherit_id" ref="documents.document_view_search" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vtiger_id" />
+                <field name="vtiger_document_no" />
+            </field>
+            <filter name="my_documents_filter" position="after">
+                <filter
+                    string="Synced From Vtiger"
+                    name="vtiger"
+                    domain="[('vtiger_id', '!=', False)]"
+                />
+            </filter>
+        </field>
+    </record>
+
+</odoo>

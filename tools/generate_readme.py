@@ -22,6 +22,12 @@ SUMMARIES = {
         "Synchronizes calendar events between Odoo and vTiger."
     ),
     "vtiger_connector_crm": "Connects CRM leads between Odoo and vTiger.",
+    "vtiger_connector_documents": (
+        "Synchronizes document metadata from vTiger into Odoo."
+    ),
+    "vtiger_connector_helpdesk": (
+        "Synchronizes HelpDesk support tickets from vTiger into Odoo."
+    ),
     "vtiger_connector_invoice": (
         "Synchronizes customer invoices between Odoo and vTiger."
     ),
@@ -32,6 +38,9 @@ SUMMARIES = {
         "Synchronizes products and inventory information between Odoo and vTiger."
     ),
     "vtiger_connector_project": "Connects projects and tasks between Odoo and vTiger.",
+    "vtiger_connector_pricebook": (
+        "Synchronizes vTiger Price Books into Odoo pricelists."
+    ),
     "vtiger_connector_purchase": (
         "Synchronizes purchase and vendor data between Odoo and vTiger."
     ),

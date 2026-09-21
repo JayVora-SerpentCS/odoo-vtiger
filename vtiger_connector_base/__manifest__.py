@@ -5,7 +5,7 @@
         "VTiger Base Connector | Vtiger Integration with Odoo | "
         "Odoo Vtiger Connector"
     ),
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.0.0",
     "summary": """
         Advanced Vtiger Base Connector | Vtiger Base Connector |
         Vtiger Odoo Connector | Vtiger Odoo Integration |
@@ -21,6 +21,7 @@
         Vtiger Integration with Odoo | Odoo Vtiger Connector
         """,
     "category": "Base Module",
+    "sequence": 1,
     "license": "AGPL-3",
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",

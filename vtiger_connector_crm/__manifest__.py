@@ -21,6 +21,7 @@
         Vtiger Lead Integration with Odoo
         """,
     "category": "Sales",
+    "sequence": 1,
     "license": "AGPL-3",
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",

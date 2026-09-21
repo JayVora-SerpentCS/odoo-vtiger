@@ -23,6 +23,7 @@
         Vtiger Invoice Integration with Odoo
         """,
     "category": "Invoicing",
+    "sequence": 1,
     "license": "AGPL-3",
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",
