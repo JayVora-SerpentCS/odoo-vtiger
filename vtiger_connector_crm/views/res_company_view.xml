@@ -6,14 +6,17 @@
         <field name="model">res.company</field>
         <field name="inherit_id" ref="vtiger_connector_base.view_vtiger_company_form" />
         <field name="arch" type="xml">
-            <field name="vtiger_crm_progress" position="before">
-                <button
-                    name="sync_vtiger_crm"
-                    string="Sync Leads / Opportunities"
-                    type="object"
-                    class="vtiger_button"
-                />
-            </field>
+            <group name="vtiger_transactional_sync" position="inside">
+                <group name="vtiger_crm_sync_row" col="2" class="o_vtiger_sync_row">
+                    <button
+                        name="sync_vtiger_crm"
+                        string="Sync Leads / Opportunities"
+                        type="object"
+                        class="vtiger_button"
+                    />
+                    <field name="vtiger_crm_progress" widget="progressbar" />
+                </group>
+            </group>
         </field>
     </record>
 

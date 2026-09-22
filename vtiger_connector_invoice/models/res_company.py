@@ -125,10 +125,44 @@ class ResCompany(models.Model):
         invoice_vals.update(
             {
                 "move_type": "out_invoice",
+                "ref": res.get("invoice_no") or res.get("subject") or res.get("id"),
                 "narration": res.get("terms_conditions"),
             }
         )
         return invoice_vals
+
+    def _find_existing_vtiger_invoice(self, res, invoice_vals):
+        invoice_obj = self.env["account.move"]
+        invoice = invoice_obj.search([("vtiger_id", "=", res.get("id"))], limit=1)
+        if invoice:
+            return invoice
+        if invoice_vals.get("ref"):
+            invoice = invoice_obj.search(
+                [
+                    ("ref", "=ilike", invoice_vals["ref"]),
+                    ("move_type", "=", invoice_vals.get("move_type", "out_invoice")),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+            if invoice:
+                return invoice
+        if (
+            invoice_vals.get("partner_id")
+            and invoice_vals.get("invoice_date")
+            and res.get("hdnGrandTotal")
+        ):
+            return invoice_obj.search(
+                [
+                    ("partner_id", "=", invoice_vals["partner_id"]),
+                    ("invoice_date", "=", invoice_vals["invoice_date"]),
+                    ("amount_total", "=", float(res.get("hdnGrandTotal") or 0.0)),
+                    ("move_type", "=", invoice_vals.get("move_type", "out_invoice")),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        return invoice_obj
 
     def _sync_invoice_lines(self, res, invoice_id, company, session_name):
         """Sync invoice lines."""
@@ -209,12 +243,14 @@ class ResCompany(models.Model):
                     # _get_partner will sync partner, if not exist
                     partner = self._get_partner(res, company)
                     invoice_vals = self._prepare_invoice_values(res, partner)
-                    invoice_id = invoice_obj.search(
-                        [("vtiger_id", "=", res.get("id"))], limit=1
-                    )
+                    invoice_id = self._find_existing_vtiger_invoice(res, invoice_vals)
                     if invoice_id:
+                        if not invoice_id.vtiger_id:
+                            invoice_vals["vtiger_id"] = res.get("id")
                         if invoice_id.state == "draft":
                             invoice_id.write(invoice_vals)
+                        elif not invoice_id.vtiger_id:
+                            invoice_id.write({"vtiger_id": res.get("id")})
                     else:
                         if not invoice_vals.get("partner_id"):
                             vtiger_user = user_obj.search(

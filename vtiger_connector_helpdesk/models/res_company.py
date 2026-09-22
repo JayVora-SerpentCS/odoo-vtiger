@@ -626,6 +626,24 @@ class ResCompany(models.Model):
                 ],
                 limit=1,
             )
+        if not ticket and vals.get("vtiger_ticket_no"):
+            ticket = ticket_obj.search(
+                [
+                    ("vtiger_ticket_no", "=", vals["vtiger_ticket_no"]),
+                    ("vtiger_source_module", "in", [False, vtiger_module]),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        if not ticket and vals.get("name"):
+            ticket = ticket_obj.search(
+                [
+                    ("name", "=ilike", vals["name"]),
+                    ("vtiger_source_module", "in", [False, vtiger_module]),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
         vals["vtiger_id"] = vtiger_key
         vals = {
             field_name: value

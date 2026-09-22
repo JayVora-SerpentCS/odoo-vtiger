@@ -53,8 +53,15 @@ class ResCompany(models.Model):
     def _prepare_sale_order_values(self, company, res, vtiger_type, session_name):
         lead_obj = self.env["crm.lead"]
         partner = self._get_sale_order_partner(company, res, session_name)
+        order_ref = (
+            res.get("salesorder_no")
+            or res.get("quote_no")
+            or res.get("subject")
+            or res.get("id")
+        )
         vals = {
             "partner_id": partner.id,
+            "client_order_ref": order_ref,
             "note": res.get("terms_conditions"),
             "vtiger_record_type": vtiger_type,
             "vtiger_status": res.get("quotestage") or res.get("sostatus"),
@@ -126,6 +133,38 @@ class ResCompany(models.Model):
         response = urlopen(req, timeout=20)
         return json.loads(response.read())
 
+    def _find_existing_vtiger_sale_order(self, res, so_order_vals):
+        sale_order_obj = self.env["sale.order"]
+        order = sale_order_obj.search([("vtiger_id", "=", res.get("id"))], limit=1)
+        if order:
+            return order
+        order_ref = so_order_vals.get("client_order_ref")
+        if order_ref:
+            order = sale_order_obj.search(
+                [
+                    ("client_order_ref", "=ilike", order_ref),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+            if order:
+                return order
+        if (
+            so_order_vals.get("partner_id")
+            and so_order_vals.get("date_order")
+            and res.get("hdnGrandTotal")
+        ):
+            return sale_order_obj.search(
+                [
+                    ("partner_id", "=", so_order_vals["partner_id"]),
+                    ("date_order", "=", so_order_vals["date_order"]),
+                    ("amount_total", "=", float(res.get("hdnGrandTotal") or 0.0)),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        return sale_order_obj
+
     def _sync_sale_order_line(self, res, order_id, company, session_name):
         """Sync the order lines from VTiger to Odoo."""
         product_obj = self.env["product.product"]
@@ -160,35 +199,35 @@ class ResCompany(models.Model):
                     order_id.write({"order_line": [(0, 0, order_line_vals)]})
 
     def fetch_so_and_quotes_data(self, company, vtiger_type):  # noqa: C901
-        sale_order_obj = self.env["sale.order"]
         access_key = company.get_vtiger_access_key()
         session_name = company.vtiger_login(access_key)
         qry = self._build_query_sales(company, vtiger_type)
         result = self._execute_vtiger_query_sales(company, qry, session_name)
         if result.get("success"):
             for res in result.get("result", []):
-                order_id = sale_order_obj.search(
-                    [("vtiger_id", "=", res.get("id"))], limit=1
-                )
-                if order_id.state not in ("sale", "cancel"):
-                    self.update_existing_sale_order_and_quotes(order_id)
                 so_order_vals = self._prepare_sale_order_values(
                     company, res, vtiger_type, session_name
                 )
+                order_id = self._find_existing_vtiger_sale_order(res, so_order_vals)
+                if order_id.state not in ("sale", "cancel"):
+                    self.update_existing_sale_order_and_quotes(order_id)
                 if order_id:
+                    if not order_id.vtiger_id:
+                        so_order_vals["vtiger_id"] = res.get("id")
                     if order_id.state in ("draft", "sent"):
                         order_id.write(so_order_vals)
                     else:
-                        order_id.write(
-                            {
-                                "note": so_order_vals.get("note"),
-                                "vtiger_status": so_order_vals.get("vtiger_status"),
-                                "vtiger_record_type": vtiger_type,
-                            }
-                        )
+                        update_vals = {
+                            "note": so_order_vals.get("note"),
+                            "vtiger_status": so_order_vals.get("vtiger_status"),
+                            "vtiger_record_type": vtiger_type,
+                        }
+                        if not order_id.vtiger_id:
+                            update_vals["vtiger_id"] = res.get("id")
+                        order_id.write(update_vals)
                 else:
                     so_order_vals["vtiger_id"] = res.get("id")
-                    order_id = sale_order_obj.create(so_order_vals)
+                    order_id = self.env["sale.order"].create(so_order_vals)
                 if order_id.state not in ("sale", "cancel") or not order_id.order_line:
                     self._sync_sale_order_line(res, order_id, company, session_name)
                 self._apply_vtiger_sale_state(order_id, res, vtiger_type)

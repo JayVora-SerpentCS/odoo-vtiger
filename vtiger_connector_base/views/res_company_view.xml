@@ -13,18 +13,29 @@
                         <field name="vtiger_server" placeholder="https://example.com" />
                         <field name="user_name" placeholder="example@test.com" />
                         <field name="last_sync_date" />
+                        <field name="has_vtiger_master_connector" invisible="1" />
+                        <field
+                            name="has_vtiger_transactional_connector"
+                            invisible="1"
+                        />
+                        <field name="has_vtiger_connector" invisible="1" />
                     </group>
-                    <separator string="Sync Progress (VTiger to Odoo)" />
+                    <separator
+                        string="Sync Progress (VTiger to Odoo)"
+                        invisible="not has_vtiger_connector"
+                    />
                     <group
                         name="vtiger_sync_progress_controls"
                         col="6"
                         class="o_vtiger_progress_controls"
+                        invisible="not has_vtiger_connector"
                     >
                         <button
                             name="action_check_vtiger_sync_progress"
                             string="Check Sync Progress"
                             type="object"
                             class="vtiger_button vtiger_progress_button"
+                            invisible="not access_key or not user_name or not vtiger_server"
                         />
                         <label for="vtiger_progress_from_date" />
                         <field name="vtiger_progress_from_date" nolabel="1" />
@@ -39,19 +50,23 @@
                         name="vtiger_sync_dashboard"
                         col="1"
                         class="o_vtiger_sync_dashboard"
+                        invisible="not has_vtiger_connector"
                     >
                         <separator
                             string="Master Data Synchronisation (VTiger to Odoo)"
+                            invisible="not has_vtiger_master_connector"
                         />
                         <group
                             col="1"
                             name="vtiger_master_sync"
                             class="o_vtiger_sync_table"
+                            invisible="not has_vtiger_master_connector"
                         >
                             <group
                                 name="vtiger_all_master_sync_row"
                                 col="2"
                                 class="o_vtiger_sync_row"
+                                invisible="not has_vtiger_master_connector"
                             >
                                 <button
                                     name="action_sync_vtiger_master_data"
@@ -61,49 +76,22 @@
                                 />
                                 <div class="o_vtiger_empty_progress" />
                             </group>
-                            <group
-                                name="vtiger_partner_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_partner_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_product_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_product_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_pricebook_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_pricebook_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
                         </group>
                         <separator
                             string="Transactional Data Synchronisation (VTiger to Odoo)"
+                            invisible="not has_vtiger_transactional_connector"
                         />
                         <group
                             col="1"
                             name="vtiger_transactional_sync"
                             class="o_vtiger_sync_table"
+                            invisible="not has_vtiger_transactional_connector"
                         >
                             <group
                                 name="vtiger_all_transactional_sync_row"
                                 col="2"
                                 class="o_vtiger_sync_row"
+                                invisible="not has_vtiger_transactional_connector"
                             >
                                 <button
                                     name="action_sync_vtiger_transactional_data"
@@ -112,86 +100,6 @@
                                     class="vtiger_button"
                                 />
                                 <div class="o_vtiger_empty_progress" />
-                            </group>
-                            <group
-                                name="vtiger_crm_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_crm_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_calendar_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_calendar_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_document_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_document_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_helpdesk_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_helpdesk_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_invoice_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_invoice_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_project_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_project_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_purchase_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_purchase_progress"
-                                    widget="progressbar"
-                                />
-                            </group>
-                            <group
-                                name="vtiger_sale_sync_row"
-                                col="2"
-                                class="o_vtiger_sync_row"
-                            >
-                                <field
-                                    name="vtiger_sale_progress"
-                                    widget="progressbar"
-                                />
                             </group>
                         </group>
                     </group>

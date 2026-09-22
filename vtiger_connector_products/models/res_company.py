@@ -56,7 +56,26 @@ class ResCompany(models.Model):
         if not product_vals.get("name"):
             product_vals["name"] = res.get("label") or res.get("id")
         product = product_templ_obj.search([("vtiger_id", "=", res.get("id"))], limit=1)
+        if not product and product_vals.get("default_code"):
+            product = product_templ_obj.search(
+                [
+                    ("default_code", "=ilike", product_vals["default_code"]),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        if not product and product_vals.get("name"):
+            product = product_templ_obj.search(
+                [
+                    ("name", "=ilike", product_vals["name"]),
+                    ("list_price", "=", float(product_vals.get("list_price") or 0.0)),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
         if product:
+            if not product.vtiger_id:
+                product_vals["vtiger_id"] = res.get("id")
             product.write(product_vals)
         else:
             product_vals["vtiger_id"] = res.get("id")

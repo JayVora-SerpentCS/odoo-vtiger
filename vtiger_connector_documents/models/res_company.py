@@ -200,7 +200,28 @@ class ResCompany(models.Model):
             return
         document_obj = self.env["documents.document"].sudo().with_company(self)
         document = document_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+        if not document and vals.get("vtiger_document_no"):
+            document = document_obj.search(
+                [
+                    ("vtiger_document_no", "=", vals["vtiger_document_no"]),
+                    ("vtiger_id", "=", False),
+                    ("company_id", "=", self.id),
+                ],
+                limit=1,
+            )
+        if not document and vals.get("name"):
+            document = document_obj.search(
+                [
+                    ("name", "=ilike", vals["name"]),
+                    ("type", "=", vals.get("type", "url")),
+                    ("vtiger_id", "=", False),
+                    ("company_id", "=", self.id),
+                ],
+                limit=1,
+            )
         if document:
+            if not document.vtiger_id:
+                vals["vtiger_id"] = vtiger_id
             document.write(vals)
         else:
             vals["vtiger_id"] = vtiger_id

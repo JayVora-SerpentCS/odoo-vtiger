@@ -62,6 +62,9 @@ class ResCompany(models.Model):
         partner = self._get_purchase_order_partner(company, res, session_name)
         vals = {
             "partner_id": partner.id,
+            "partner_ref": res.get("purchaseorder_no")
+            or res.get("subject")
+            or res.get("id"),
             "notes": res.get("terms_conditions"),
         }
         date_o = res.get("createdtime")
@@ -88,6 +91,37 @@ class ResCompany(models.Model):
         req = Request("%s?%s" % (url, data))
         response = urlopen(req, timeout=20)
         return json.loads(response.read())
+
+    def _find_existing_vtiger_purchase_order(self, res, po_order_vals):
+        purchase_order_obj = self.env["purchase.order"]
+        order = purchase_order_obj.search([("vtiger_id", "=", res.get("id"))], limit=1)
+        if order:
+            return order
+        if po_order_vals.get("partner_ref"):
+            order = purchase_order_obj.search(
+                [
+                    ("partner_ref", "=ilike", po_order_vals["partner_ref"]),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+            if order:
+                return order
+        if (
+            po_order_vals.get("partner_id")
+            and po_order_vals.get("date_order")
+            and res.get("hdnGrandTotal")
+        ):
+            return purchase_order_obj.search(
+                [
+                    ("partner_id", "=", po_order_vals["partner_id"]),
+                    ("date_order", "=", po_order_vals["date_order"]),
+                    ("amount_total", "=", float(res.get("hdnGrandTotal") or 0.0)),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        return purchase_order_obj
 
     def _sync_order_lines(self, res, order_id, company, session_name):
         """Sync the order lines from VTiger to Odoo."""
@@ -139,11 +173,23 @@ class ResCompany(models.Model):
                     po_order_vals = self._prepare_purchase_order_values(
                         company, res, session_name
                     )
+                    if not order_id:
+                        order_id = self._find_existing_vtiger_purchase_order(
+                            res, po_order_vals
+                        )
                     if order_id:
+                        if not order_id.vtiger_id:
+                            po_order_vals["vtiger_id"] = res.get("id")
                         if order_id.state in ("draft", "sent", "to approve"):
                             order_id.write(po_order_vals)
-                        elif res.get("terms_conditions"):
-                            order_id.write({"notes": res.get("terms_conditions")})
+                        else:
+                            update_vals = {}
+                            if res.get("terms_conditions"):
+                                update_vals["notes"] = res.get("terms_conditions")
+                            if not order_id.vtiger_id:
+                                update_vals["vtiger_id"] = res.get("id")
+                            if update_vals:
+                                order_id.write(update_vals)
                     else:
                         po_order_vals["vtiger_id"] = res.get("id")
                         order_id = purchase_order_obj.create(po_order_vals)

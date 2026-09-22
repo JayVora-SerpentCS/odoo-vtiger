@@ -105,6 +105,21 @@ class ResCompany(models.Model):
             no_mail_to_attendees=True,
         ).write(calendar_vals)
 
+    def _find_existing_vtiger_calendar_event(self, res, calendar_vals):
+        calendar_obj = self.env["calendar.event"]
+        calendar_event = calendar_obj.search(
+            [("vtiger_id", "=", res.get("id"))], limit=1
+        )
+        if calendar_event:
+            return calendar_event
+        domain = [
+            ("name", "=ilike", calendar_vals.get("name")),
+            ("vtiger_id", "=", False),
+        ]
+        if calendar_vals.get("start"):
+            domain.append(("start", "=", calendar_vals["start"]))
+        return calendar_obj.search(domain, limit=1)
+
     def action_sync_vtiger(self):
         self.sync_vtiger_calendar_event(full_sync=False)
         return super(ResCompany, self).action_sync_vtiger()
@@ -137,10 +152,12 @@ class ResCompany(models.Model):
                         company._prepare_vtiger_calendar_recurrence_values(res)
                     )
                     calendar_vals.update(company._prepare_vtiger_calendar_values(res))
-                    calendar_event = calendar_obj.search(
-                        [("vtiger_id", "=", res.get("id"))], limit=1
+                    calendar_event = company._find_existing_vtiger_calendar_event(
+                        res, calendar_vals
                     )
                     if calendar_event:
+                        if not calendar_event.vtiger_id:
+                            calendar_vals["vtiger_id"] = res.get("id")
                         company._write_vtiger_calendar_event(
                             calendar_event, calendar_vals
                         )

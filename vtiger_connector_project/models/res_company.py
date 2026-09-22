@@ -242,7 +242,14 @@ class ResCompany(models.Model):
             return
         project_obj = self.env["project.project"]
         project = project_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+        if not project and project_vals.get("name"):
+            project = project_obj.search(
+                [("name", "=ilike", project_vals["name"]), ("vtiger_id", "=", False)],
+                limit=1,
+            )
         if project:
+            if not project.vtiger_id:
+                project_vals["vtiger_id"] = vtiger_id
             project.write(project_vals)
         else:
             project_vals.update({"vtiger_id": vtiger_id})
@@ -253,7 +260,17 @@ class ResCompany(models.Model):
             return
         task_obj = self.env["project.task"]
         task = task_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+        if not task and task_vals.get("name"):
+            task_domain = [
+                ("name", "=ilike", task_vals["name"]),
+                ("vtiger_id", "=", False),
+            ]
+            if task_vals.get("project_id"):
+                task_domain.append(("project_id", "=", task_vals["project_id"]))
+            task = task_obj.search(task_domain, limit=1)
         if task:
+            if not task.vtiger_id:
+                task_vals["vtiger_id"] = vtiger_id
             task.write(task_vals)
         else:
             task_vals.update({"vtiger_id": vtiger_id})
