@@ -74,6 +74,14 @@ class ResCompany(models.Model):
         self.sync_vtiger_partner()
         return super(ResCompany, self).action_sync_vtiger()
 
+    def _execute_vtiger_partner_query(self, company, qry, session_name):
+        values = {"operation": "query", "query": qry, "sessionName": session_name}
+        data = urlencode(values)
+        url = company.get_vtiger_server_url()
+        req = Request("%s?%s" % (url, data))
+        response = urlopen(req, timeout=20)
+        return json.loads(response.read())
+
     def contact_vals(self, res):
         name = " ".join(
             part for part in (res.get("firstname"), res.get("lastname")) if part
@@ -122,9 +130,52 @@ class ResCompany(models.Model):
             "country_id": res.get("bill_country") or False,
         }
 
-    def fetch_data(self, company, vtiger_type):
-        country_obj = self.env["res.country"]
+    def _convert_vtiger_partner_country(self, partner_vals):
+        country_value = partner_vals.get("country_id")
+        if country_value:
+            country = self.env["res.country"].search(
+                [
+                    "|",
+                    ("name", "=", country_value),
+                    ("code", "=", country_value),
+                ],
+                limit=1,
+            )
+            partner_vals["country_id"] = country.id if country else False
+        return partner_vals
 
+    def _sync_vtiger_partner_reference(
+        self, company, vtiger_type, vtiger_id, session_name
+    ):
+        if not vtiger_id:
+            return self.env["res.partner"]
+        partner = self.env["res.partner"].search(
+            [("vtiger_id", "=", vtiger_id)], limit=1
+        )
+        if partner:
+            return partner
+        qry = "SELECT * FROM %s WHERE id = '%s';" % (vtiger_type, vtiger_id)
+        result = company._execute_vtiger_partner_query(company, qry, session_name)
+        if not result.get("success") or not result.get("result"):
+            return self.env["res.partner"]
+        res = result["result"][0]
+        if vtiger_type == "Accounts":
+            vals = company._convert_vtiger_partner_country(company.account_vals(res))
+            company._upsert_vtiger_partner(vals, vtiger_id, is_company=True)
+        elif vtiger_type == "Vendors":
+            vals = company._convert_vtiger_partner_country(company.vandor_vals(res))
+            company._upsert_vtiger_partner(vals, vtiger_id)
+        else:
+            vals = company._convert_vtiger_partner_country(company.contact_vals(res))
+            account = company._sync_vtiger_partner_reference(
+                company, "Accounts", res.get("account_id"), session_name
+            )
+            if account:
+                vals["parent_id"] = account.id
+            company._upsert_vtiger_partner(vals, vtiger_id)
+        return self.env["res.partner"].search([("vtiger_id", "=", vtiger_id)], limit=1)
+
+    def fetch_data(self, company, vtiger_type):
         access_key = company.get_vtiger_access_key()
         session_name = company.vtiger_login(access_key)
         qry_template = {
@@ -145,12 +196,7 @@ class ResCompany(models.Model):
             )
         else:
             qry = qry_template_1[vtiger_type]
-        values = {"operation": "query", "query": qry, "sessionName": session_name}
-        data = urlencode(values)
-        url = company.get_vtiger_server_url()
-        req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        result = json.loads(response.read())
+        result = company._execute_vtiger_partner_query(company, qry, session_name)
         if result.get("success"):
             for res in result.get("result", []):
                 partner_vals = {}
@@ -162,24 +208,19 @@ class ResCompany(models.Model):
                     partner_vals = self.account_vals(res)
 
                 if vtiger_type in ("Contacts", "Vendors", "Accounts"):
-                    if partner_vals.get("country_id"):
-                        country = country_obj.search(
-                            [
-                                "|",
-                                ("name", "=", partner_vals.get("country_id")),
-                                ("code", "=", partner_vals.get("country_id")),
-                            ],
-                            limit=1,
-                        )
-                        partner_vals.update(
-                            {"country_id": country.id if country else False}
-                        )
+                    partner_vals = company._convert_vtiger_partner_country(partner_vals)
 
                     if vtiger_type == "Accounts":
                         self._upsert_vtiger_partner(
                             partner_vals, res.get("id"), is_company=True
                         )
                     else:
+                        if vtiger_type == "Contacts" and res.get("account_id"):
+                            account = company._sync_vtiger_partner_reference(
+                                company, "Accounts", res.get("account_id"), session_name
+                            )
+                            if account:
+                                partner_vals["parent_id"] = account.id
                         self._upsert_vtiger_partner(partner_vals, res.get("id"))
         return True
 

@@ -7,6 +7,10 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 AGPL_LINK = "https://www.gnu.org/licenses/agpl-3.0.html"
+INTRO = (
+    "Odoo - vTiger Integration (These connector modules are migrated and "
+    "verified for vTiger version 9.26.9.1)"
+)
 MAINTAINER = (
     '<a href="https://www.serpentcs.com">'
     '<img src="vtiger_connector_base/static/description/images/header-logo.png" '
@@ -96,7 +100,7 @@ def main():
     license_name = _license(addons)
     content = f"""# odoo-vtiger
 
-Odoo - vTiger Integration
+{INTRO}
 
 ## Available addons
 

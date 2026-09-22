@@ -71,11 +71,13 @@ class ResCompany(models.Model):
             _logger.warning("VTiger HelpDesk query failed: %s", result)
         return records
 
-    def _get_vtiger_partner(self, company, vtiger_id, session_name=False, create=False):
+    def _get_vtiger_helpdesk_partner(
+        self, company, vtiger_id, session_name=False, create=False
+    ):
         if not vtiger_id:
             return self.env["res.partner"]
         if "x" not in str(vtiger_id):
-            return self._get_vtiger_partner_by_name(vtiger_id, create=create)
+            return self._get_vtiger_helpdesk_partner_by_name(vtiger_id, create=create)
         partner = self.env["res.partner"].search(
             [("vtiger_id", "=", vtiger_id)], limit=1
         )
@@ -87,11 +89,11 @@ class ResCompany(models.Model):
         )
         if partner or not create or not session_name:
             return partner
-        return self._create_vtiger_partner_from_reference(
+        return self._create_vtiger_helpdesk_partner_from_reference(
             company, vtiger_id, session_name
         )
 
-    def _get_vtiger_partner_by_name(self, partner_name, create=False):
+    def _get_vtiger_helpdesk_partner_by_name(self, partner_name, create=False):
         if not partner_name:
             return self.env["res.partner"]
         partner = self.env["res.partner"].search(
@@ -103,7 +105,9 @@ class ResCompany(models.Model):
             {"name": partner_name, "customer_rank": 1}
         )
 
-    def _create_vtiger_partner_from_reference(self, company, vtiger_id, session_name):
+    def _create_vtiger_helpdesk_partner_from_reference(
+        self, company, vtiger_id, session_name
+    ):
         res = self._execute_vtiger_retrieve(company, vtiger_id, session_name)
         if not res:
             return self.env["res.partner"]
@@ -129,7 +133,7 @@ class ResCompany(models.Model):
             {key: value for key, value in vals.items() if value}
         )
 
-    def _get_vtiger_user(
+    def _get_vtiger_helpdesk_user(
         self,
         company,
         vtiger_user_id=False,
@@ -148,7 +152,9 @@ class ResCompany(models.Model):
             vtiger_user_vals = self._execute_vtiger_retrieve(
                 company, vtiger_user_id, session_name
             )
-            user_name = user_name or self._get_vtiger_user_name(vtiger_user_vals)
+            user_name = user_name or self._get_vtiger_helpdesk_user_name(
+                vtiger_user_vals
+            )
             user_email = vtiger_user_vals.get("email1") or vtiger_user_vals.get("email")
             if user_email:
                 user = user_obj.search([("login", "=", user_email)], limit=1)
@@ -165,7 +171,7 @@ class ResCompany(models.Model):
             "login": (
                 vtiger_user_vals.get("email1")
                 or vtiger_user_vals.get("email")
-                or self._get_vtiger_user_login(user_name, vtiger_user_id)
+                or self._get_vtiger_helpdesk_user_login(user_name, vtiger_user_id)
             ),
         }
         if (
@@ -176,7 +182,7 @@ class ResCompany(models.Model):
             user_vals["vtiger_id"] = vtiger_user_id
         return user_obj.create(user_vals)
 
-    def _get_vtiger_user_name(self, user_vals):
+    def _get_vtiger_helpdesk_user_name(self, user_vals):
         return (
             " ".join(
                 part
@@ -190,7 +196,7 @@ class ResCompany(models.Model):
             or user_vals.get("label")
         )
 
-    def _get_vtiger_user_login(self, user_name, vtiger_user_id=False):
+    def _get_vtiger_helpdesk_user_login(self, user_name, vtiger_user_id=False):
         login_base = str(user_name or vtiger_user_id or "vtiger_user").strip()
         login_base = login_base.lower().replace(" ", ".")
         login = "%s@vtiger" % login_base
@@ -206,18 +212,33 @@ class ResCompany(models.Model):
             return False
         return partner.phone or partner.mobile
 
+    def _get_vtiger_helpdesk_team_model(self):
+        if "helpdesk.ticket.team" in self.env:
+            return "helpdesk.ticket.team"
+        return "helpdesk.team"
+
+    def _get_vtiger_helpdesk_stage_model(self):
+        if "helpdesk.ticket.stage" in self.env:
+            return "helpdesk.ticket.stage"
+        return "helpdesk.stage"
+
     def _get_vtiger_helpdesk_team(self):
         ticket_obj = self.env["helpdesk.ticket"]
         default_team_id = ticket_obj.default_get(["team_id"]).get("team_id")
+        team_model = self._get_vtiger_helpdesk_team_model()
         if default_team_id:
-            return self.env["helpdesk.team"].browse(default_team_id)
-        return self.env["helpdesk.team"].search([], limit=1)
+            return self.env[team_model].browse(default_team_id)
+        team = self.env[team_model].search([], limit=1)
+        if team:
+            return team
+        return self.env[team_model].create({"name": "VTiger HelpDesk"})
 
     def _get_vtiger_helpdesk_stage(self, stage_name, team=False):
+        stage_model = self._get_vtiger_helpdesk_stage_model()
         if not stage_name:
-            return self.env["helpdesk.stage"]
+            return self.env[stage_model]
         stage_name = self._map_vtiger_helpdesk_stage_name(stage_name)
-        stage_obj = self.env["helpdesk.stage"]
+        stage_obj = self.env[stage_model]
         domain = [("name", "=ilike", stage_name)]
         if team and "team_ids" in stage_obj._fields:
             domain = [
@@ -230,6 +251,12 @@ class ResCompany(models.Model):
         if stage:
             return stage
         return stage_obj.search([("name", "=ilike", stage_name)], limit=1)
+
+    def _get_vtiger_default_helpdesk_stage(self, team=False):
+        stage_obj = self.env[self._get_vtiger_helpdesk_stage_model()]
+        if team and hasattr(team, "_get_applicable_stages"):
+            return team._get_applicable_stages()[:1]
+        return stage_obj.search([], limit=1)
 
     def _map_vtiger_helpdesk_stage_name(self, stage_name):
         stage = str(stage_name or "").strip().lower()
@@ -250,34 +277,128 @@ class ResCompany(models.Model):
             "cancelled": "Cancelled",
             "canceled": "Cancelled",
         }
+        if self._get_vtiger_helpdesk_stage_model() == "helpdesk.ticket.stage":
+            stage_map.update(
+                {
+                    "new": "New",
+                    "open": "New",
+                    "in progress": "In Progress",
+                    "on hold": "In Progress",
+                    "hold": "In Progress",
+                    "solved": "Done",
+                    "complete": "Done",
+                    "completed": "Done",
+                    "closed": "Done",
+                    "done": "Done",
+                    "archived": "Done",
+                    "cancelled": "Cancelled",
+                    "canceled": "Cancelled",
+                }
+            )
         return stage_map.get(stage, stage_name)
 
-    def _prepare_vtiger_helpdesk_values(self, res, company):
-        partner = self._get_vtiger_partner(company, res.get("parent_id"))
-        contact = self._get_vtiger_partner(company, res.get("contact_id"))
+    def _prepare_vtiger_helpdesk_values(self, res, company, session_name=False):
+        partner_value = self._get_first_vtiger_value(
+            res,
+            (
+                "parent_id",
+                "account_id",
+                "accountid",
+                "related_to",
+                "relatedto",
+                "organization_id",
+                "organizationid",
+            ),
+        )
+        contact_value = self._get_first_vtiger_value(
+            res, ("contact_id", "contactid", "contactname")
+        )
+        partner = self._get_vtiger_helpdesk_partner(
+            company, partner_value, session_name=session_name, create=True
+        )
+        contact = self._get_vtiger_helpdesk_partner(
+            company, contact_value, session_name=session_name, create=True
+        )
+        if not partner:
+            partner = self._get_vtiger_helpdesk_partner_by_name(
+                self._get_first_vtiger_value(
+                    res,
+                    (
+                        "parent_id_label",
+                        "account_id_label",
+                        "accountname",
+                        "account_name",
+                        "organization_name",
+                    ),
+                ),
+                create=True,
+            )
+        if not contact:
+            contact = self._get_vtiger_helpdesk_partner_by_name(
+                self._get_first_vtiger_value(
+                    res,
+                    (
+                        "contact_id_label",
+                        "contactid_label",
+                        "contactname_label",
+                        "contact_name",
+                    ),
+                ),
+                create=True,
+            )
         team = self._get_vtiger_helpdesk_team()
+        ticket_status = self._get_first_vtiger_value(
+            res, ("ticketstatus", "ticket_status", "status")
+        )
         vals = {
-            "name": res.get("ticket_title") or res.get("title") or res.get("id"),
+            "name": self._get_first_vtiger_value(
+                res, ("ticket_title", "title", "subject", "ticket_no", "id")
+            ),
             "vtiger_source_module": "HelpDesk",
             "vtiger_ticket_no": res.get("ticket_no"),
             "partner_id": partner.id if partner else False,
             "partner_name": contact.name if contact else False,
             "partner_email": contact.email if contact else False,
-            "partner_phone": contact.phone if contact else False,
-            "vtiger_status": res.get("ticketstatus"),
-            "priority": self._map_vtiger_ticket_priority(res.get("ticketpriorities")),
-            "vtiger_category": res.get("ticketcategories"),
+            "partner_phone": self._get_partner_phone(contact),
+            "vtiger_status": ticket_status,
+            "priority": self._map_vtiger_ticket_priority(
+                self._get_first_vtiger_value(
+                    res, ("ticketpriorities", "ticketpriority", "priority")
+                )
+            ),
+            "vtiger_category": self._get_first_vtiger_value(
+                res, ("ticketcategories", "ticketcategory", "category")
+            ),
             "vtiger_severity": res.get("severity"),
-            "description": res.get("description"),
+            "description": res.get("description") or res.get("title") or res.get("id"),
             "vtiger_solution": res.get("solution"),
             "vtiger_createdtime": self._to_vtiger_datetime(res.get("createdtime")),
             "vtiger_modifiedtime": self._to_vtiger_datetime(res.get("modifiedtime")),
         }
         if team:
             vals["team_id"] = team.id
-        stage = self._get_vtiger_helpdesk_stage(res.get("ticketstatus"), team)
+        stage = self._get_vtiger_helpdesk_stage(ticket_status, team)
+        if not stage:
+            stage = self._get_vtiger_default_helpdesk_stage(team)
         if stage:
             vals["stage_id"] = stage.id
+        user = self._get_vtiger_helpdesk_user(
+            company,
+            self._get_first_vtiger_value(res, ("assigned_user_id", "smownerid")),
+            self._get_first_vtiger_value(
+                res,
+                (
+                    "assigned_user_id_label",
+                    "assigned_to",
+                    "assigned_user_name",
+                    "smownerid_label",
+                ),
+            ),
+            session_name=session_name,
+            create=True,
+        )
+        if user:
+            vals["user_id"] = user.id
         return vals
 
     def _get_first_vtiger_value(self, res, field_names):
@@ -294,12 +415,12 @@ class ResCompany(models.Model):
             ("contact_id", "contactid", "contactname", "contact_id_display"),
         ):
             partner_value = self._get_first_vtiger_value(res, field_names)
-            partner = self._get_vtiger_partner(
+            partner = self._get_vtiger_helpdesk_partner(
                 company, partner_value, session_name=session_name, create=True
             )
             if partner:
                 return partner
-        return self._get_vtiger_partner_by_name(
+        return self._get_vtiger_helpdesk_partner_by_name(
             self._get_first_vtiger_value(
                 res,
                 (
@@ -320,7 +441,7 @@ class ResCompany(models.Model):
 
     def _prepare_vtiger_service_contract_values(self, res, company, session_name):
         partner = self._get_vtiger_service_contract_partner(company, res, session_name)
-        contact = self._get_vtiger_partner(
+        contact = self._get_vtiger_helpdesk_partner(
             company,
             self._get_first_vtiger_value(
                 res, ("contact_id", "contactid", "contactname")
@@ -332,9 +453,11 @@ class ResCompany(models.Model):
             res, ("contact_id", "contactid", "contactname")
         )
         if not contact and contact_value and "x" not in str(contact_value):
-            contact = self._get_vtiger_partner_by_name(contact_value, create=True)
+            contact = self._get_vtiger_helpdesk_partner_by_name(
+                contact_value, create=True
+            )
         if not contact:
-            contact = self._get_vtiger_partner_by_name(
+            contact = self._get_vtiger_helpdesk_partner_by_name(
                 self._get_first_vtiger_value(
                     res,
                     (
@@ -361,7 +484,7 @@ class ResCompany(models.Model):
         status = self._get_first_vtiger_value(
             res, ("contract_status", "servicestatus", "status")
         )
-        description = self._prepare_service_contract_description(res)
+        description = self._prepare_service_contract_description(res) or subject
         ticket_partner = contact or partner
         vals = {
             "name": subject,
@@ -401,9 +524,11 @@ class ResCompany(models.Model):
         if team:
             vals["team_id"] = team.id
         stage = self._get_vtiger_helpdesk_stage(vals.get("vtiger_status"), team)
+        if not stage:
+            stage = self._get_vtiger_default_helpdesk_stage(team)
         if stage:
             vals["stage_id"] = stage.id
-        user = self._get_vtiger_user(
+        user = self._get_vtiger_helpdesk_user(
             company,
             self._get_first_vtiger_value(res, ("assigned_user_id", "smownerid")),
             self._get_first_vtiger_value(
@@ -502,6 +627,11 @@ class ResCompany(models.Model):
                 limit=1,
             )
         vals["vtiger_id"] = vtiger_key
+        vals = {
+            field_name: value
+            for field_name, value in vals.items()
+            if field_name in ticket_obj._fields
+        }
         if ticket:
             ticket.write(vals)
         else:
@@ -534,7 +664,9 @@ class ResCompany(models.Model):
             for res in helpdesk_records:
                 try:
                     company._upsert_vtiger_helpdesk_ticket(
-                        company._prepare_vtiger_helpdesk_values(res, company),
+                        company._prepare_vtiger_helpdesk_values(
+                            res, company, session_name=session_name
+                        ),
                         res.get("id"),
                         "HelpDesk",
                     )

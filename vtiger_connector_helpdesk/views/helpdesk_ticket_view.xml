@@ -4,9 +4,9 @@
     <record id="view_vtiger_helpdesk_ticket_form" model="ir.ui.view">
         <field name="name">helpdesk.ticket.vtiger.form</field>
         <field name="model">helpdesk.ticket</field>
-        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+        <field name="inherit_id" ref="helpdesk_mgmt.ticket_view_form" />
         <field name="arch" type="xml">
-            <page name="extra_info" position="inside">
+            <page name="other_info" position="inside">
                 <group string="VTiger">
                     <field name="vtiger_id" readonly="1" />
                     <field name="vtiger_source_module" readonly="1" />
@@ -25,13 +25,13 @@
     <record id="view_vtiger_helpdesk_ticket_search" model="ir.ui.view">
         <field name="name">helpdesk.ticket.vtiger.search</field>
         <field name="model">helpdesk.ticket</field>
-        <field name="inherit_id" ref="helpdesk.helpdesk_tickets_view_search" />
+        <field name="inherit_id" ref="helpdesk_mgmt.helpdesk_ticket_view_search" />
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="vtiger_id" />
                 <field name="vtiger_ticket_no" />
             </field>
-            <filter name="archive" position="after">
+            <filter name="archived" position="after">
                 <filter
                     string="Synced From Vtiger"
                     name="vtiger"

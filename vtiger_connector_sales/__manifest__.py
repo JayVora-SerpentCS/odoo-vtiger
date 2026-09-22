@@ -30,6 +30,7 @@
     "website": "https://www.serpentcs.com",
     "depends": [
         "sale",
+        "sale_management",
         "vtiger_connector_products",
         "vtiger_connector_partner",
         "vtiger_connector_crm",

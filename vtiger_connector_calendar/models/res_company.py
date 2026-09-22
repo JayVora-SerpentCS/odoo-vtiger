@@ -39,7 +39,20 @@ class ResCompany(models.Model):
         start_date = self._parse_vtiger_date(res.get("date_start"))
         end_date = self._parse_vtiger_date(res.get("due_date")) or start_date
         if not start_date:
-            return {}
+            fallback_date = (
+                self._parse_vtiger_date(res.get("createdtime"))
+                or self._parse_vtiger_date(res.get("modifiedtime"))
+                or fields.Date.context_today(self)
+            )
+            return {
+                "start": fields.Datetime.to_string(
+                    datetime.combine(fallback_date, time(hour=8))
+                ),
+                "stop": fields.Datetime.to_string(
+                    datetime.combine(fallback_date, time(hour=9))
+                ),
+                "allday": False,
+            }
 
         if self._vtiger_to_bool(res.get("allday")) or self._vtiger_to_bool(
             res.get("notime")
@@ -69,18 +82,41 @@ class ResCompany(models.Model):
             "allday": False,
         }
 
+    def _prepare_vtiger_calendar_recurrence_values(self, res):
+        recurring_type = str(res.get("recurringtype") or "").strip()
+        if recurring_type.lower() in ("", "--none--", "none"):
+            return {}
+        rrule_type = recurring_type.lower()
+        if rrule_type not in dict(
+            self.env["calendar.event"]._fields["rrule_type"].selection
+        ):
+            return {}
+        return {
+            "recurrency": True,
+            "rrule_type": rrule_type,
+        }
+
+    def _write_vtiger_calendar_event(self, calendar_event, calendar_vals):
+        recurrent_fields = calendar_event._get_recurrent_fields()
+        if recurrent_fields.intersection(calendar_vals):
+            calendar_vals = dict(calendar_vals, recurrence_update="all_events")
+        calendar_event.with_context(
+            dont_notify=True,
+            no_mail_to_attendees=True,
+        ).write(calendar_vals)
+
     def action_sync_vtiger(self):
-        self.sync_vtiger_calendar_event()
+        self.sync_vtiger_calendar_event(full_sync=False)
         return super(ResCompany, self).action_sync_vtiger()
 
-    def sync_vtiger_calendar_event(self):
+    def sync_vtiger_calendar_event(self, full_sync=True):
         calendar_obj = self.env["calendar.event"]
         for company in self:
             # Get the access key for connection
             access_key = company.get_vtiger_access_key()
             # create session
             session_name = company.vtiger_login(access_key)
-            if company.last_sync_date:
+            if company.last_sync_date and not full_sync:
                 qry = """SELECT * FROM Events WHERE modifiedtime >= '%s';""" % (
                     company.last_sync_date
                 )
@@ -97,19 +133,17 @@ class ResCompany(models.Model):
                     calendar_vals = {
                         "name": res.get("subject"),
                     }
-                    if res.get("recurringtype") != "--None--":
-                        calendar_vals.update(
-                            {
-                                "recurrency": bool(res.get("recurringtype", "")),
-                                "rrule_type": res.get("recurringtype", "").lower(),
-                            }
-                        )
+                    calendar_vals.update(
+                        company._prepare_vtiger_calendar_recurrence_values(res)
+                    )
                     calendar_vals.update(company._prepare_vtiger_calendar_values(res))
                     calendar_event = calendar_obj.search(
                         [("vtiger_id", "=", res.get("id"))], limit=1
                     )
                     if calendar_event:
-                        calendar_event.write(calendar_vals)
+                        company._write_vtiger_calendar_event(
+                            calendar_event, calendar_vals
+                        )
                     else:
                         calendar_vals.update(
                             {
