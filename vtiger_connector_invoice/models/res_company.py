@@ -11,7 +11,7 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     def action_sync_vtiger(self):
-        self.sync_vtiger_invoice()
+        self.sync_vtiger_invoice(full_sync=False)
         return super(ResCompany, self).action_sync_vtiger()
 
     def delete_existing_invoice(self, result):
@@ -33,9 +33,9 @@ class ResCompany(models.Model):
                 invoice_id and invoice_id.invoice_line_ids.unlink()
         return True
 
-    def _build_query_invoice(self, company):
+    def _build_query_invoice(self, company, full_sync=True):
         """Build query based on the last sync date."""
-        if company.last_sync_date:
+        if company.last_sync_date and not full_sync:
             return """SELECT * FROM Invoice WHERE modifiedtime >= '%s';""" % (
                 company.last_sync_date
             )
@@ -125,18 +125,52 @@ class ResCompany(models.Model):
         invoice_vals.update(
             {
                 "move_type": "out_invoice",
+                "ref": res.get("invoice_no") or res.get("subject") or res.get("id"),
                 "narration": res.get("terms_conditions"),
             }
         )
         return invoice_vals
 
-    def _sync_invoice_lines(self, res, invoice_id, company):
+    def _find_existing_vtiger_invoice(self, res, invoice_vals):
+        invoice_obj = self.env["account.move"]
+        invoice = invoice_obj.search([("vtiger_id", "=", res.get("id"))], limit=1)
+        if invoice:
+            return invoice
+        if invoice_vals.get("ref"):
+            invoice = invoice_obj.search(
+                [
+                    ("ref", "=ilike", invoice_vals["ref"]),
+                    ("move_type", "=", invoice_vals.get("move_type", "out_invoice")),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+            if invoice:
+                return invoice
+        if (
+            invoice_vals.get("partner_id")
+            and invoice_vals.get("invoice_date")
+            and res.get("hdnGrandTotal")
+        ):
+            return invoice_obj.search(
+                [
+                    ("partner_id", "=", invoice_vals["partner_id"]),
+                    ("invoice_date", "=", invoice_vals["invoice_date"]),
+                    ("amount_total", "=", float(res.get("hdnGrandTotal") or 0.0)),
+                    ("move_type", "=", invoice_vals.get("move_type", "out_invoice")),
+                    ("vtiger_id", "=", False),
+                ],
+                limit=1,
+            )
+        return invoice_obj
+
+    def _sync_invoice_lines(self, res, invoice_id, company, session_name):
         """Sync invoice lines."""
         product_obj = self.env["product.product"]
         account_payment_register_obj = self.env["account.payment.register"]
         res.get("hdnGrandTotal")
         invoice_line_vals_dict = []
-        for order_line_dict in res.get("lineItems"):
+        for order_line_dict in res.get("lineItems") or []:
             if type(order_line_dict) != dict:
                 order_line_dict = res.get("lineItems").get(order_line_dict)
             product = order_line_dict.get("productid")
@@ -144,12 +178,8 @@ class ResCompany(models.Model):
                 continue
             product = product_obj.search([("vtiger_id", "=", product)], limit=1)
             if not product:
-                company.sync_vtiger_products(
-                    company, vtiger_type=["Products", "Services"]
-                )
-                product = product_obj.search(
-                    [("vtiger_id", "=", order_line_dict.get("productid"))],
-                    limit=1,
+                product = company._sync_vtiger_product_reference(
+                    company, order_line_dict.get("productid"), session_name
                 )
             if not product:
                 continue
@@ -199,13 +229,13 @@ class ResCompany(models.Model):
             )
             account_payment_register_rec.action_create_payments()
 
-    def sync_vtiger_invoice(self):
+    def sync_vtiger_invoice(self, full_sync=True):
         invoice_obj = self.env["account.move"]
         user_obj = self.env["res.users"]
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = self._build_query_invoice(company)
+            qry = self._build_query_invoice(company, full_sync=full_sync)
             result = self._execute_vtiger_query_invoice(company, qry, session_name)
             if result.get("success") and self.env.user.company_id == company:
                 self.delete_existing_invoice(result)
@@ -213,12 +243,14 @@ class ResCompany(models.Model):
                     # _get_partner will sync partner, if not exist
                     partner = self._get_partner(res, company)
                     invoice_vals = self._prepare_invoice_values(res, partner)
-                    invoice_id = invoice_obj.search(
-                        [("vtiger_id", "=", res.get("id"))], limit=1
-                    )
+                    invoice_id = self._find_existing_vtiger_invoice(res, invoice_vals)
                     if invoice_id:
+                        if not invoice_id.vtiger_id:
+                            invoice_vals["vtiger_id"] = res.get("id")
                         if invoice_id.state == "draft":
                             invoice_id.write(invoice_vals)
+                        elif not invoice_id.vtiger_id:
+                            invoice_id.write({"vtiger_id": res.get("id")})
                     else:
                         if not invoice_vals.get("partner_id"):
                             vtiger_user = user_obj.search(
@@ -241,5 +273,5 @@ class ResCompany(models.Model):
                         )
                         invoice_id = invoice_obj.create(invoice_vals)
 
-                    self._sync_invoice_lines(res, invoice_id, company)
+                    self._sync_invoice_lines(res, invoice_id, company, session_name)
         return True

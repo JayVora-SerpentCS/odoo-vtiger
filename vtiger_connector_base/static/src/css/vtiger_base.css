@@ -1,6 +1,108 @@
 .vtiger_button {
     color: white;
-    background-color: #7c7bad;
-    border-color: #7c7bad;
-    margin-left: 10px;
+    background-color: #6f6aa8;
+    border-color: #6f6aa8;
+    margin: 0;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.vtiger_button:hover,
+.vtiger_button:focus {
+    color: white;
+    background-color: #59548f;
+    border-color: #59548f;
+}
+
+.o_form_view .o_vtiger_sync_dashboard {
+    max-width: 1020px;
+    margin-top: 18px;
+}
+
+.o_form_view .o_vtiger_sync_table {
+    margin: 10px 0 26px;
+}
+
+.o_form_view .o_vtiger_sync_row {
+    display: flex !important;
+    align-items: center;
+    gap: 22px;
+    margin: 0 0 14px;
+    min-height: 46px;
+}
+
+.o_form_view .o_vtiger_sync_row .vtiger_button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 260px;
+    min-height: 44px;
+    margin: 0;
+    padding: 9px 14px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+    vertical-align: top;
+}
+
+.o_form_view .o_vtiger_sync_row .o_progressbar {
+    min-width: 300px;
+    max-width: 360px;
+}
+
+.o_form_view .o_vtiger_sync_row .o_wrap_label {
+    min-width: 150px;
+}
+
+.o_form_view .o_vtiger_sync_row > .o_td_label {
+    min-width: 150px;
+}
+
+.o_form_view .o_vtiger_empty_action {
+    width: 260px;
+    min-width: 260px;
+}
+
+.o_form_view .o_vtiger_progress_button {
+    width: 210px;
+    min-height: 40px;
+    margin: 0 18px 12px 0;
+}
+
+.o_form_view .o_vtiger_progress_controls {
+    display: flex !important;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin: 8px 0 16px;
+}
+
+.o_form_view .o_vtiger_progress_controls > .o_td_label {
+    width: auto !important;
+    min-width: 130px;
+    margin: 0;
+}
+
+.o_form_view .o_vtiger_progress_controls .o_field_widget {
+    min-width: 180px;
+    margin-right: 12px;
+}
+
+.o_form_view .o_vtiger_sync_dashboard .o_horizontal_separator {
+    margin-top: 18px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+    .o_form_view .o_vtiger_sync_row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .o_form_view .o_vtiger_sync_row .vtiger_button,
+    .o_form_view .o_vtiger_sync_row .o_progressbar {
+        width: 100%;
+        max-width: 320px;
+    }
 }

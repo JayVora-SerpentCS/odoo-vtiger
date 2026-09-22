@@ -9,10 +9,99 @@
             <notebook position="inside">
                 <page name="vtiger_configuration" string="VTiger Configuration">
                     <group col="4" name="vtiger_details">
-                        <field name="access_key" />
+                        <field name="access_key" placeholder="Enter Access Key" />
                         <field name="vtiger_server" placeholder="https://example.com" />
                         <field name="user_name" placeholder="example@test.com" />
                         <field name="last_sync_date" />
+                        <field name="has_vtiger_master_connector" invisible="1" />
+                        <field
+                            name="has_vtiger_transactional_connector"
+                            invisible="1"
+                        />
+                        <field name="has_vtiger_connector" invisible="1" />
+                    </group>
+                    <separator
+                        string="Sync Progress (VTiger to Odoo)"
+                        invisible="not has_vtiger_connector"
+                    />
+                    <group
+                        name="vtiger_sync_progress_controls"
+                        col="6"
+                        class="o_vtiger_progress_controls"
+                        invisible="not has_vtiger_connector"
+                    >
+                        <button
+                            name="action_check_vtiger_sync_progress"
+                            string="Check Sync Progress"
+                            type="object"
+                            class="vtiger_button vtiger_progress_button"
+                            invisible="not access_key or not user_name or not vtiger_server"
+                        />
+                        <label for="vtiger_progress_from_date" />
+                        <field name="vtiger_progress_from_date" nolabel="1" />
+                        <label for="last_vtiger_progress_check" />
+                        <field
+                            name="last_vtiger_progress_check"
+                            nolabel="1"
+                            readonly="1"
+                        />
+                    </group>
+                    <group
+                        name="vtiger_sync_dashboard"
+                        col="1"
+                        class="o_vtiger_sync_dashboard"
+                        invisible="not has_vtiger_connector"
+                    >
+                        <separator
+                            string="Master Data Synchronisation (VTiger to Odoo)"
+                            invisible="not has_vtiger_master_connector"
+                        />
+                        <group
+                            col="1"
+                            name="vtiger_master_sync"
+                            class="o_vtiger_sync_table"
+                            invisible="not has_vtiger_master_connector"
+                        >
+                            <group
+                                name="vtiger_all_master_sync_row"
+                                col="2"
+                                class="o_vtiger_sync_row"
+                                invisible="not has_vtiger_master_connector"
+                            >
+                                <button
+                                    name="action_sync_vtiger_master_data"
+                                    string="Sync All Master Data"
+                                    type="object"
+                                    class="vtiger_button"
+                                />
+                                <div class="o_vtiger_empty_progress" />
+                            </group>
+                        </group>
+                        <separator
+                            string="Transactional Data Synchronisation (VTiger to Odoo)"
+                            invisible="not has_vtiger_transactional_connector"
+                        />
+                        <group
+                            col="1"
+                            name="vtiger_transactional_sync"
+                            class="o_vtiger_sync_table"
+                            invisible="not has_vtiger_transactional_connector"
+                        >
+                            <group
+                                name="vtiger_all_transactional_sync_row"
+                                col="2"
+                                class="o_vtiger_sync_row"
+                                invisible="not has_vtiger_transactional_connector"
+                            >
+                                <button
+                                    name="action_sync_vtiger_transactional_data"
+                                    string="Sync All Transactional Data"
+                                    type="object"
+                                    class="vtiger_button"
+                                />
+                                <div class="o_vtiger_empty_progress" />
+                            </group>
+                        </group>
                     </group>
                 </page>
             </notebook>

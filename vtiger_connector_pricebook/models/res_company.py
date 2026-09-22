@@ -62,7 +62,14 @@ class ResCompany(models.Model):
             return
         pricelist_obj = self.env["product.pricelist"]
         pricelist = pricelist_obj.search([("vtiger_id", "=", vtiger_id)], limit=1)
+        if not pricelist and vals.get("name"):
+            pricelist = pricelist_obj.search(
+                [("name", "=ilike", vals["name"]), ("vtiger_id", "=", False)],
+                limit=1,
+            )
         if pricelist:
+            if not pricelist.vtiger_id:
+                vals["vtiger_id"] = vtiger_id
             pricelist.write(vals)
         else:
             vals["vtiger_id"] = vtiger_id

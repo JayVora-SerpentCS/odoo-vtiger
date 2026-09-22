@@ -26,7 +26,7 @@
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",
     "website": "https://www.serpentcs.com",
-    "depends": ["helpdesk", "vtiger_connector_partner"],
+    "depends": ["helpdesk_mgmt", "vtiger_connector_partner"],
     "data": [
         "views/res_company_view.xml",
         "views/helpdesk_ticket_view.xml",

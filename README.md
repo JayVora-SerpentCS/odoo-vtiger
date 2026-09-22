@@ -1,6 +1,6 @@
 # odoo-vtiger
 
-Odoo - vTiger Integration
+Odoo - vTiger Integration (These connector modules are migrated and verified for vTiger version 9.26.9.1)
 
 ## Available addons
 

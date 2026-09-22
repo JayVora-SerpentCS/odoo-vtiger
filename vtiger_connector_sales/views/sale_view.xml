@@ -8,6 +8,8 @@
         <field name="arch" type="xml">
             <field name="payment_term_id" position="after">
                 <field name="vtiger_id" />
+                <field name="vtiger_record_type" />
+                <field name="vtiger_status" />
             </field>
         </field>
     </record>
