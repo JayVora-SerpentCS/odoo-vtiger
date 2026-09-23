@@ -25,7 +25,7 @@
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",
     "website": "https://www.serpentcs.com",
-    "depends": ["documents", "vtiger_connector_base"],
+    "depends": ["dms", "vtiger_connector_base"],
     "data": [
         "views/res_company_view.xml",
         "views/documents_document_view.xml",

@@ -222,7 +222,7 @@ class ResCompany(models.Model):
             },
             "vtiger_document_progress": {
                 "modules": ("Documents",),
-                "model": "documents.document",
+                "model": "dms.file",
             },
         }
 
@@ -339,10 +339,8 @@ class ResCompany(models.Model):
             )
         if model_name == "helpdesk.ticket":
             return self._find_progress_by_name(model, record.get("ticket_title"))
-        if model_name == "documents.document":
-            return self._find_progress_by_name(
-                model, record.get("notes_title") or record.get("filename")
-            )
+        if model_name == "dms.file":
+            return self._find_progress_document(record, model)
         return model.browse()
 
     def _find_progress_by_name(self, model, name):
@@ -350,6 +348,21 @@ class ResCompany(models.Model):
             return model.browse()
         return model.search(
             [("name", "=ilike", name), ("vtiger_id", "=", False)],
+            limit=1,
+        )
+
+    def _find_progress_document(self, record, model):
+        names = [
+            name for name in (record.get("filename"), record.get("notes_title")) if name
+        ]
+        if not names:
+            return model.browse()
+        return model.search(
+            [
+                ("name", "in", names),
+                ("vtiger_id", "=", False),
+                ("storage_id.name", "=", "VTiger Documents"),
+            ],
             limit=1,
         )
 
