@@ -33,7 +33,6 @@ class ResCompany(models.Model):
     vtiger_calendar_progress = fields.Float(string="Calendar Events", readonly=True)
     vtiger_project_progress = fields.Float(string="Projects / Tasks", readonly=True)
     vtiger_helpdesk_progress = fields.Float(string="HelpDesk", readonly=True)
-    vtiger_document_progress = fields.Float(string="Documents", readonly=True)
     has_vtiger_master_connector = fields.Boolean(
         compute="_compute_vtiger_connector_sections"
     )
@@ -57,7 +56,6 @@ class ResCompany(models.Model):
         transactional_modules = {
             "vtiger_connector_calendar",
             "vtiger_connector_crm",
-            "vtiger_connector_documents",
             "vtiger_connector_helpdesk",
             "vtiger_connector_invoice",
             "vtiger_connector_project",
@@ -220,10 +218,6 @@ class ResCompany(models.Model):
                 "model": "helpdesk.ticket",
                 "id_format": "%(module)s:%s",
             },
-            "vtiger_document_progress": {
-                "modules": ("Documents",),
-                "model": "dms.file",
-            },
         }
 
     def _execute_vtiger_count_query(self, vtiger_module, session_name):
@@ -339,8 +333,6 @@ class ResCompany(models.Model):
             )
         if model_name == "helpdesk.ticket":
             return self._find_progress_by_name(model, record.get("ticket_title"))
-        if model_name == "dms.file":
-            return self._find_progress_document(record, model)
         return model.browse()
 
     def _find_progress_by_name(self, model, name):
@@ -348,21 +340,6 @@ class ResCompany(models.Model):
             return model.browse()
         return model.search(
             [("name", "=ilike", name), ("vtiger_id", "=", False)],
-            limit=1,
-        )
-
-    def _find_progress_document(self, record, model):
-        names = [
-            name for name in (record.get("filename"), record.get("notes_title")) if name
-        ]
-        if not names:
-            return model.browse()
-        return model.search(
-            [
-                ("name", "in", names),
-                ("vtiger_id", "=", False),
-                ("storage_id.name", "=", "VTiger Documents"),
-            ],
             limit=1,
         )
 
