@@ -3,8 +3,8 @@
 from odoo import fields, models
 
 
-class DocumentsDocument(models.Model):
-    _inherit = "documents.document"
+class DmsFile(models.Model):
+    _inherit = "dms.file"
 
     vtiger_id = fields.Char("VTiger ID", readonly=True, copy=False, index=True)
     vtiger_document_no = fields.Char("VTiger Document No", readonly=True, copy=False)
@@ -17,3 +17,10 @@ class DocumentsDocument(models.Model):
     vtiger_notecontent = fields.Text("VTiger Notes", readonly=True)
     vtiger_createdtime = fields.Datetime("VTiger Created Time", readonly=True)
     vtiger_modifiedtime = fields.Datetime("VTiger Modified Time", readonly=True)
+
+
+class DmsDirectory(models.Model):
+    _inherit = "dms.directory"
+
+    vtiger_id = fields.Char("VTiger ID", readonly=True, copy=False, index=True)
+    vtiger_document_type = fields.Char("VTiger Document Type", readonly=True)
