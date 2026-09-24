@@ -1,9 +1,8 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 import re
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from odoo import fields, models
 from odoo.tools import html2plaintext
@@ -17,21 +16,20 @@ class ResCompany(models.Model):
     )
 
     def action_sync_vtiger(self):
-        self.sync_vtiger_pricebook()
-        return super(ResCompany, self).action_sync_vtiger()
+        self.sync_vtiger_pricebook(full_sync=False)
+        return super().action_sync_vtiger()
 
     def _execute_vtiger_pricebook_query(self, company, qry, session_name):
         values = {"operation": "query", "query": qry, "sessionName": session_name}
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
-    def _build_vtiger_pricebook_query(self, company):
-        if company.last_vtiger_pricebook_sync_date:
+    def _build_vtiger_pricebook_query(self, company, full_sync=True):
+        if company.last_vtiger_pricebook_sync_date and not full_sync:
             return "SELECT * FROM PriceBooks WHERE modifiedtime >= '%s';" % (
-                company.last_vtiger_pricebook_sync_date
+                fields.Datetime.to_string(company.last_vtiger_pricebook_sync_date)
             )
         return "SELECT * FROM PriceBooks;"
 
@@ -75,11 +73,11 @@ class ResCompany(models.Model):
             vals["vtiger_id"] = vtiger_id
             pricelist_obj.create(vals)
 
-    def sync_vtiger_pricebook(self):
+    def sync_vtiger_pricebook(self, full_sync=True):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
-            qry = company._build_vtiger_pricebook_query(company)
+            qry = company._build_vtiger_pricebook_query(company, full_sync=full_sync)
             result = company._execute_vtiger_pricebook_query(company, qry, session_name)
             if result.get("success"):
                 for res in result.get("result", []):

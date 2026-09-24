@@ -5,7 +5,7 @@
         "VTiger Price Book Connector | Odoo VTiger Pricelist Connector | "
         "VTiger Price Book Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": (
         "Advanced Vtiger Pricebook Connector | Vtiger Pricebook Connector | "
         "Vtiger Pricelist Connector | Vtiger Pricelist Integration | "

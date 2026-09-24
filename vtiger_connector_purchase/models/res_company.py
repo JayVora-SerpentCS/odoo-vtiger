@@ -1,10 +1,9 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-from odoo import models
+from odoo import fields, models
 
 
 # Todo: Need to set tax in odoo of vtiger in purchase order.
@@ -13,18 +12,12 @@ class ResCompany(models.Model):
 
     def action_sync_vtiger(self):
         self.sync_vtiger_purchase_order(full_sync=False)
-        return super(ResCompany, self).action_sync_vtiger()
+        return super().action_sync_vtiger()
 
-    def update_existing_order(self, result):
-        """Added the Method for the Work Existing order line,
-        Because the Vtiger return dictionary"""
-        purchase_order_obj = self.env["purchase.order"]
-        for res in result.get("result", []):
-            order_id = purchase_order_obj.search(
-                [("vtiger_id", "=", res.get("id"))], limit=1
-            )
-            if order_id and order_id.state in ("draft", "sent", "to approve"):
-                order_id.order_line.unlink()
+    def update_existing_order(self, order_id):
+        """Refresh lines only for the current editable purchase order."""
+        if order_id and order_id.state in ("draft", "sent", "to approve"):
+            order_id.order_line.unlink()
         return True
 
     def _get_vtiger_fallback_partner(self):
@@ -65,21 +58,21 @@ class ResCompany(models.Model):
             "partner_ref": res.get("purchaseorder_no")
             or res.get("subject")
             or res.get("id"),
-            "notes": res.get("terms_conditions"),
+            "note": res.get("terms_conditions"),
         }
-        date_o = res.get("createdtime")
+        date_o = res.get("createdtime") or res.get("orderdate")
         if date_o:
             vals["date_order"] = date_o
-        date_modified = res.get("modifiedtime")
-        if date_modified:
-            vals["date_planned"] = date_modified
+        date_planned = res.get("duedate") or res.get("modifiedtime")
+        if date_planned:
+            vals["date_planned"] = date_planned
         return vals
 
     def _build_query(self, company, full_sync=True):
         """Build query based on the last sync date."""
         if company.last_sync_date and not full_sync:
             return """SELECT * FROM PurchaseOrder WHERE modifiedtime >= '%s';""" % (
-                company.last_sync_date
+                fields.Datetime.to_string(company.last_sync_date)
             )
         return """SELECT * FROM PurchaseOrder;"""
 
@@ -89,8 +82,7 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
     def _find_existing_vtiger_purchase_order(self, res, po_order_vals):
         purchase_order_obj = self.env["purchase.order"]
@@ -123,80 +115,94 @@ class ResCompany(models.Model):
             )
         return purchase_order_obj
 
+    def _iter_vtiger_order_lines(self, res):
+        line_items = res.get("lineItems") or []
+        if isinstance(line_items, dict):
+            line_items = line_items.values()
+        for order_line_dict in line_items:
+            if isinstance(order_line_dict, dict):
+                yield order_line_dict
+
     def _sync_order_lines(self, res, order_id, company, session_name):
         """Sync the order lines from VTiger to Odoo."""
         product_obj = self.env["product.product"]
-        if res.get("lineItems"):
-            for order_line_dict in res.get("lineItems"):
-                if type(order_line_dict) != dict:
-                    order_line_dict = res.get("lineItems").get(order_line_dict)
-                product = product_obj.search(
-                    [("vtiger_id", "=", order_line_dict.get("productid"))], limit=1
+        order_line_vals = []
+        date_planned = (
+            order_id.date_planned or order_id.date_order or fields.Datetime.now()
+        )
+
+        for order_line_dict in self._iter_vtiger_order_lines(res):
+            vtiger_product_id = order_line_dict.get("productid")
+            if not vtiger_product_id:
+                continue
+            product = product_obj.search(
+                [("vtiger_id", "=", vtiger_product_id)], limit=1
+            )
+            if not product:
+                product = company._sync_vtiger_product_reference(
+                    company, vtiger_product_id, session_name
                 )
-                if not product:
-                    product = company._sync_vtiger_product_reference(
-                        company, order_line_dict.get("productid"), session_name
-                    )
-                if not product:
-                    continue
+            if not product:
+                continue
 
-                price_unit = order_line_dict.get("listprice")
-                quantity = order_line_dict.get("quantity")
-                netprice = res.get("hdnGrandTotal")
+            price_unit = order_line_dict.get("listprice")
+            quantity = order_line_dict.get("quantity")
+            order_line_vals.append(
+                (
+                    0,
+                    0,
+                    {
+                        "name": order_line_dict.get("comment") or product.display_name,
+                        "product_id": product.id,
+                        "product_uom_id": product.uom_id.id,
+                        "product_qty": float(quantity or 0.00),
+                        "price_unit": float(price_unit or 0.00),
+                        "date_planned": fields.Datetime.to_string(date_planned),
+                    },
+                )
+            )
 
-                order_line_vals = {
-                    "name": order_line_dict.get("comment"),
-                    "product_id": product and product.id,
-                    "product_uom": product.uom_id.id,
-                    "product_qty": float(quantity or 0.00),
-                    "price_unit": float(price_unit or 0.00),
-                    "price_subtotal": float(netprice or 0.00),
-                    "order_id": order_id.id,
-                    "date_planned": order_id.date_order.strftime("%Y-%m-%d %H:%M:%S"),
-                }
-
-                order_id.write({"order_line": [(0, 0, order_line_vals)]})
+        if order_line_vals:
+            order_id.write({"order_line": order_line_vals})
 
     def sync_vtiger_purchase_order(self, full_sync=True):
         purchase_order_obj = self.env["purchase.order"]
         for company in self:
+            if self.env.user.company_id != company:
+                continue
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
             qry = self._build_query(company, full_sync=full_sync)
             result = self._execute_vtiger_query(company, qry, session_name)
-            if result.get("success"):
-                self.update_existing_order(result)
-                for res in result.get("result", []):
-                    order_id = purchase_order_obj.search(
-                        [("vtiger_id", "=", res.get("id"))], limit=1
-                    )
-                    po_order_vals = self._prepare_purchase_order_values(
-                        company, res, session_name
-                    )
-                    if not order_id:
-                        order_id = self._find_existing_vtiger_purchase_order(
-                            res, po_order_vals
-                        )
-                    if order_id:
-                        if not order_id.vtiger_id:
-                            po_order_vals["vtiger_id"] = res.get("id")
-                        if order_id.state in ("draft", "sent", "to approve"):
-                            order_id.write(po_order_vals)
-                        else:
-                            update_vals = {}
-                            if res.get("terms_conditions"):
-                                update_vals["notes"] = res.get("terms_conditions")
-                            if not order_id.vtiger_id:
-                                update_vals["vtiger_id"] = res.get("id")
-                            if update_vals:
-                                order_id.write(update_vals)
-                    else:
+            if not result.get("success"):
+                continue
+            for res in result.get("result", []):
+                po_order_vals = self._prepare_purchase_order_values(
+                    company, res, session_name
+                )
+                order_id = self._find_existing_vtiger_purchase_order(res, po_order_vals)
+                if order_id:
+                    if not order_id.vtiger_id:
                         po_order_vals["vtiger_id"] = res.get("id")
-                        order_id = purchase_order_obj.create(po_order_vals)
+                    if order_id.state in ("draft", "sent", "to approve"):
+                        order_id.write(po_order_vals)
+                    else:
+                        update_vals = {}
+                        if res.get("terms_conditions"):
+                            update_vals["note"] = res.get("terms_conditions")
+                        if not order_id.vtiger_id:
+                            update_vals["vtiger_id"] = res.get("id")
+                        if update_vals:
+                            order_id.write(update_vals)
+                else:
+                    po_order_vals["vtiger_id"] = res.get("id")
+                    order_id = purchase_order_obj.create(po_order_vals)
 
-                    if res.get("lineItems") and (
-                        order_id.state in ("draft", "sent", "to approve")
-                        or not order_id.order_line
-                    ):
-                        self._sync_order_lines(res, order_id, company, session_name)
+                if res.get("lineItems") and (
+                    order_id.state in ("draft", "sent", "to approve")
+                    or not order_id.order_line
+                ):
+                    if order_id.state in ("draft", "sent", "to approve"):
+                        self.update_existing_order(order_id)
+                    self._sync_order_lines(res, order_id, company, session_name)
         return True

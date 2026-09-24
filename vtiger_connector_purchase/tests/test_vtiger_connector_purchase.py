@@ -116,12 +116,15 @@ class TestVtigerPurchase(TransactionCase):
             )
 
             # Create the product
-            self.env["product.template"].create(
-                {
-                    "name": "Test Product",
-                    "detailed_type": "consu",
-                    "purchase_line_warn": "no-message",
-                }
+            product = (
+                self.env["product.template"]
+                .create(
+                    {
+                        "name": "Test Product",
+                        "type": "consu",
+                    }
+                )
+                .product_variant_id
             )
 
             # Create the purchase order
@@ -130,7 +133,7 @@ class TestVtigerPurchase(TransactionCase):
                     "partner_id": partner_rec.id,
                     "state": "draft",
                     "date_order": po_result.get("duedate"),
-                    "notes": po_result.get("terms_conditions"),
+                    "note": po_result.get("terms_conditions"),
                     "vtiger_id": po_result.get("id"),
                 }
             )
@@ -139,11 +142,11 @@ class TestVtigerPurchase(TransactionCase):
             self.env["purchase.order.line"].create(
                 {
                     "name": po_line_result.get("comment"),
-                    "product_id": 1,
+                    "product_id": product.id,
+                    "product_uom_id": product.uom_id.id,
                     "product_qty": float(po_line_result.get("quantity") or 0.00),
                     "price_unit": float(po_line_result.get("listprice") or 0.00),
-                    "price_subtotal": float(po_line_result.get("netprice") or 0.00),
                     "order_id": po_rec.id,
-                    "date_planned": po_rec.date_order.strftime("%Y-%m-%d %H:%M:%S"),
+                    "date_planned": po_rec.date_planned,
                 }
             )

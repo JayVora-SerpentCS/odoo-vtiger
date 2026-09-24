@@ -67,14 +67,19 @@ class TestVtigerCalendar(TransactionCase):
             # Create User if user_id exists
             created_user_id = calendar_result.get("created_user_id")
             if created_user_id:
-                self.env["res.users"].create(
-                    {
-                        "name": "Test user",
-                        "login": "test@test",
-                        "mobile": 6669998883,
-                        "user_id": 1,
-                    }
-                )
+                user_vals = {
+                    "name": "Test user",
+                    "login": "test@test",
+                    "user_id": 1,
+                }
+                # Odoo 19 dropped the standalone "mobile" field on
+                # res.partner/res.users (merged into "phone"); only set it
+                # when running on a version where it still exists.
+                if "mobile" in self.env["res.users"]._fields:
+                    user_vals["mobile"] = "6669998883"
+                else:
+                    user_vals["phone"] = "6669998883"
+                self.env["res.users"].create(user_vals)
 
             # Create Calendar Event
             self.env["calendar.event"].create(

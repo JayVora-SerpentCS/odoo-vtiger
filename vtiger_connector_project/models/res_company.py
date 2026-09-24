@@ -1,11 +1,10 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 import logging
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-from odoo import models
+from odoo import fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -14,8 +13,8 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     def action_sync_vtiger(self):
-        self.sync_vtiger_project_task()
-        return super(ResCompany, self).action_sync_vtiger()
+        self.sync_vtiger_project_task(full_sync=False)
+        return super().action_sync_vtiger()
 
     def _execute_vtiger_project_query(self, company, qry, session_name=False):
         if not session_name:
@@ -25,14 +24,13 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
-    def _build_vtiger_project_query(self, vtiger_module, company):
-        if company.last_sync_date:
+    def _build_vtiger_project_query(self, vtiger_module, company, full_sync=True):
+        if company.last_sync_date and not full_sync:
             return "SELECT * FROM %s WHERE modifiedtime >= '%s';" % (
                 vtiger_module,
-                company.last_sync_date,
+                fields.Datetime.to_string(company.last_sync_date),
             )
         return "SELECT * FROM %s;" % vtiger_module
 
@@ -69,7 +67,7 @@ class ResCompany(models.Model):
         )
         if partner:
             return partner
-        company.sync_vtiger_partner()
+        company.sync_vtiger_partner(full_sync=True)
         return self.env["res.partner"].search([("vtiger_id", "=", vtiger_id)], limit=1)
 
     def _get_vtiger_project(self, company, vtiger_id):
@@ -203,9 +201,9 @@ class ResCompany(models.Model):
         task_vals = {
             "name": res.get("subject") or res.get("taskname") or res.get("id"),
             "description": res.get("description"),
-            "priority": "1"
-            if str(res.get("taskpriority", "")).lower() == "high"
-            else "0",
+            "priority": (
+                "1" if str(res.get("taskpriority", "")).lower() == "high" else "0"
+            ),
             "allocated_hours": self._get_task_allocated_hours(res),
         }
         if not task_vals["name"] and res.get("label"):
@@ -276,14 +274,16 @@ class ResCompany(models.Model):
             task_vals.update({"vtiger_id": vtiger_id})
             task_obj.create(task_vals)
 
-    def sync_vtiger_project(self, full_sync=False):
+    def sync_vtiger_project(self, full_sync=True):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
             qry = (
                 "SELECT * FROM Project;"
                 if full_sync
-                else self._build_vtiger_project_query("Project", company)
+                else self._build_vtiger_project_query(
+                    "Project", company, full_sync=False
+                )
             )
             records = self._get_vtiger_query_records(company, [qry], session_name)
             for res in records:
@@ -296,7 +296,7 @@ class ResCompany(models.Model):
                     _logger.exception("Failed to sync VTiger project %s", res.get("id"))
         return True
 
-    def sync_vtiger_task(self, full_sync=False):
+    def sync_vtiger_task(self, full_sync=True):
         for company in self:
             access_key = company.get_vtiger_access_key()
             session_name = company.vtiger_login(access_key)
@@ -309,15 +309,19 @@ class ResCompany(models.Model):
                 ]
             else:
                 queries = [
-                    self._build_vtiger_project_query("Tasks", company),
+                    self._build_vtiger_project_query("Tasks", company, full_sync=False),
                     (
-                        "SELECT * FROM Calendar WHERE modifiedtime >= '%s' "
-                        "AND activitytype = 'Task';"
-                    )
-                    % company.last_sync_date
-                    if company.last_sync_date
-                    else "SELECT * FROM Calendar WHERE activitytype = 'Task';",
-                    self._build_vtiger_project_query("ProjectTask", company),
+                        (
+                            "SELECT * FROM Calendar WHERE modifiedtime >= '%s' "
+                            "AND activitytype = 'Task';"
+                        )
+                        % company.last_sync_date
+                        if company.last_sync_date
+                        else "SELECT * FROM Calendar WHERE activitytype = 'Task';"
+                    ),
+                    self._build_vtiger_project_query(
+                        "ProjectTask", company, full_sync=False
+                    ),
                 ]
             records = self._get_vtiger_query_records(company, queries, session_name)
             for res in records:
@@ -332,7 +336,7 @@ class ResCompany(models.Model):
                     _logger.exception("Failed to sync VTiger task %s", res.get("id"))
         return True
 
-    def sync_vtiger_project_task(self):
-        self.sync_vtiger_project(full_sync=True)
-        self.sync_vtiger_task(full_sync=True)
+    def sync_vtiger_project_task(self, full_sync=True):
+        self.sync_vtiger_project(full_sync=full_sync)
+        self.sync_vtiger_task(full_sync=full_sync)
         return True

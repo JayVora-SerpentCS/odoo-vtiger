@@ -90,7 +90,6 @@ class TestVtigerPartner(TransactionCase):
                     "data_erased": "0",
                     "consent_lock_data": "",
                     "consent_track_email_engagement": "",
-                    "consent_track_shared_documents": "",
                     "consents_last_requested_on": "",
                     "primary_linkedin": "",
                     "followers_linkedin": "",
@@ -105,24 +104,30 @@ class TestVtigerPartner(TransactionCase):
             ],
         }
 
+        partner_obj = self.env["res.partner"]
+        # Odoo 19 dropped the standalone "mobile" field on res.partner
+        # (folded into "phone"); only set it when it still exists so
+        # this test keeps working on both earlier versions and 19.0.
+        has_mobile_field = "mobile" in partner_obj._fields
+
         if vtiger_partner_dict.get("success"):
             partner_result = vtiger_partner_dict.get("result")[0]
 
             # Create Partner
-            self.env["res.partner"].create(
-                {
-                    "name": partner_result.get("salutationtype")
-                    + partner_result.get("firstname")
-                    + partner_result.get("lastname"),
-                    "email": partner_result.get("email"),
-                    "phone": partner_result.get("phone"),
-                    "mobile": partner_result.get("mobile"),
-                    "street": partner_result.get("mailingstreet"),
-                    "city": partner_result.get("mailingcity"),
-                    "zip": partner_result.get("zip"),
-                    "vtiger_id": partner_result.get("id"),
-                }
-            )
+            contact_vals = {
+                "name": partner_result.get("salutationtype")
+                + partner_result.get("firstname")
+                + partner_result.get("lastname"),
+                "email": partner_result.get("email"),
+                "phone": partner_result.get("phone"),
+                "street": partner_result.get("mailingstreet"),
+                "city": partner_result.get("mailingcity"),
+                "zip": partner_result.get("zip"),
+                "vtiger_id": partner_result.get("id"),
+            }
+            if has_mobile_field:
+                contact_vals["mobile"] = partner_result.get("mobile")
+            partner_obj.create(contact_vals)
 
         # Sample Vendor data
         vtiger_vendor_dict = {
@@ -165,7 +170,7 @@ class TestVtigerPartner(TransactionCase):
         if vtiger_vendor_dict.get("success"):
             vendor_result = vtiger_vendor_dict.get("result")[0]
 
-            self.env["res.partner"].create(
+            partner_obj.create(
                 {
                     "name": vendor_result.get("vendorname"),
                     "email": vendor_result.get("email"),
@@ -255,18 +260,18 @@ class TestVtigerPartner(TransactionCase):
         if vtiger_account_dict.get("success"):
             account_result = vtiger_account_dict.get("result")[0]
 
-            self.env["res.partner"].create(
-                {
-                    "name": account_result.get("accountname"),
-                    "email": account_result.get("email1"),
-                    "phone": account_result.get("phone"),
-                    "mobile": account_result.get("mobile"),
-                    "supplier_rank": 1,
-                    "customer_rank": 1,
-                    "street": account_result.get("bill_street"),
-                    "city": account_result.get("bill_city"),
-                    "zip": account_result.get("bill_code"),
-                    "comment": account_result.get("description"),
-                    "vtiger_id": account_result.get("id"),
-                }
-            )
+            account_vals = {
+                "name": account_result.get("accountname"),
+                "email": account_result.get("email1"),
+                "phone": account_result.get("phone"),
+                "supplier_rank": 1,
+                "customer_rank": 1,
+                "street": account_result.get("bill_street"),
+                "city": account_result.get("bill_city"),
+                "zip": account_result.get("bill_code"),
+                "comment": account_result.get("description"),
+                "vtiger_id": account_result.get("id"),
+            }
+            if has_mobile_field:
+                account_vals["mobile"] = account_result.get("mobile")
+            partner_obj.create(account_vals)

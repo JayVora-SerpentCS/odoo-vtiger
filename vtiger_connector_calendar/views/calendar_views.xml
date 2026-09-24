@@ -6,7 +6,10 @@
         <field name="model">calendar.event</field>
         <field name="inherit_id" ref="calendar.view_calendar_event_form" />
         <field name="arch" type="xml">
-            <xpath expr="//div[@class='d-flex align-items-baseline']" position="after">
+            <xpath
+                expr="//div[hasclass('d-flex', 'align-items-baseline')]"
+                position="after"
+            >
                 <group>
                     <field name="vtiger_id" />
                 </group>

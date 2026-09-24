@@ -1,19 +1,22 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-from odoo import models
+from odoo import fields, models
 
 
 # Todo: Need to set tax in odoo of vtiger in product.
 class ResCompany(models.Model):
     _inherit = "res.company"
 
+    last_vtiger_product_sync_date = fields.Datetime(
+        string="Last VTiger Product Synced Time"
+    )
+
     def action_sync_vtiger(self):
-        self.sync_vtiger_service_products()
-        return super(ResCompany, self).action_sync_vtiger()
+        self.sync_vtiger_service_products(full_sync=False)
+        return super().action_sync_vtiger()
 
     def service_product_vals(self, res):
         return {
@@ -22,8 +25,8 @@ class ResCompany(models.Model):
             "purchase_ok": True,
             "type": "service",
             "default_code": res.get("serial_no"),
-            "list_price": res.get("unit_price"),
-            "standard_price": res.get("purchase_cost"),
+            "list_price": float(res.get("unit_price") or 0.0),
+            "standard_price": float(res.get("purchase_cost") or 0.0),
             "description_sale": res.get("description"),
         }
 
@@ -34,8 +37,8 @@ class ResCompany(models.Model):
             "purchase_ok": True,
             "type": "consu",
             "default_code": res.get("serial_no"),
-            "list_price": res.get("unit_price"),
-            "standard_price": res.get("purchase_cost"),
+            "list_price": float(res.get("unit_price") or 0.0),
+            "standard_price": float(res.get("purchase_cost") or 0.0),
             "description_sale": res.get("description"),
         }
 
@@ -44,8 +47,7 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
     def _upsert_vtiger_product_template(self, vtiger_product_type, res):
         product_templ_obj = self.env["product.template"]
@@ -106,7 +108,7 @@ class ResCompany(models.Model):
                 return template.product_variant_id
         return self.env["product.product"]
 
-    def sync_vtiger_products(self, company, vtiger_type):
+    def sync_vtiger_products(self, company, vtiger_type, full_sync=True):
         access_key = company.get_vtiger_access_key()
         session_name = company.vtiger_login(access_key)
         qry_template = {
@@ -118,8 +120,10 @@ class ResCompany(models.Model):
             "Services": """SELECT * FROM Services;""",
         }
         for vtiger_product_type in vtiger_type:
-            if company.last_sync_date:
-                qry = qry_template[vtiger_product_type].format(company.last_sync_date)
+            if company.last_vtiger_product_sync_date and not full_sync:
+                qry = qry_template[vtiger_product_type].format(
+                    fields.Datetime.to_string(company.last_vtiger_product_sync_date)
+                )
             else:
                 qry = qry_template_1[vtiger_product_type]
             result = company._execute_vtiger_product_query(company, qry, session_name)
@@ -128,7 +132,10 @@ class ResCompany(models.Model):
                     self._upsert_vtiger_product_template(vtiger_product_type, res)
         return True
 
-    def sync_vtiger_service_products(self):
+    def sync_vtiger_service_products(self, full_sync=True):
         for company in self:
-            self.sync_vtiger_products(company, vtiger_type=["Products", "Services"])
+            self.sync_vtiger_products(
+                company, vtiger_type=["Products", "Services"], full_sync=full_sync
+            )
+            company.last_vtiger_product_sync_date = fields.Datetime.now()
         return True

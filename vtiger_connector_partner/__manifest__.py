@@ -5,7 +5,7 @@
         "VTiger Partner Connector | VTiger Vendor Connector | "
         "Odoo VTiger Partner Connector | VTiger Partner Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": """
         Advanced Vtiger Partner Connector | Vtiger Partner Connector |
         Vtiger Contact Connector | Vtiger Contact Integration |
@@ -28,7 +28,7 @@
     "author": "Serpent Consulting Services Pvt. Ltd.",
     "maintainer": "Serpent Consulting Services Pvt. Ltd.",
     "website": "https://www.serpentcs.com",
-    "depends": ["account", "contacts", "vtiger_connector_base"],
+    "depends": ["contacts", "vtiger_connector_base"],
     "data": ["views/res_company_view.xml", "views/res_partner_view.xml"],
     "installable": True,
     "images": [

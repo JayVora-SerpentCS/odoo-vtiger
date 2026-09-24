@@ -1,8 +1,7 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from odoo import fields, models
 
@@ -18,11 +17,26 @@ class ResCompany(models.Model):
         except (TypeError, ValueError):
             return 0.0
 
-    def action_sync_vtiger(self):
-        self.sync_vtiger_crm()
-        return super(ResCompany, self).action_sync_vtiger()
+    def _clean_vtiger_vals(self, vals):
+        return {
+            field_name: value
+            for field_name, value in vals.items()
+            if value not in (False, None, "")
+        }
 
-    def _get_vtiger_records(self, company, vtiger_type):
+    def _filter_res_partner_vals(self, vals):
+        partner_fields = self.env["res.partner"]._fields
+        return {
+            field_name: value
+            for field_name, value in vals.items()
+            if field_name in partner_fields
+        }
+
+    def action_sync_vtiger(self):
+        self.sync_vtiger_crm(full_sync=False)
+        return super().action_sync_vtiger()
+
+    def _get_vtiger_records(self, company, vtiger_type, full_sync=True):
         query_by_type = {
             "Leads": "SELECT * FROM Leads WHERE modifiedtime >= '%s';",
             "Potentials": "SELECT * FROM Potentials WHERE modifiedtime >= '%s';",
@@ -31,8 +45,10 @@ class ResCompany(models.Model):
             "Leads": "SELECT * FROM Leads;",
             "Potentials": "SELECT * FROM Potentials;",
         }
-        if company.last_vtiger_crm_sync_date:
-            qry = query_by_type[vtiger_type] % company.last_vtiger_crm_sync_date
+        if company.last_vtiger_crm_sync_date and not full_sync:
+            qry = query_by_type[vtiger_type] % fields.Datetime.to_string(
+                company.last_vtiger_crm_sync_date
+            )
         else:
             qry = full_query_by_type[vtiger_type]
 
@@ -42,11 +58,69 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        result = json.loads(response.read())
+        result = company._vtiger_request_json(req, "querying VTiger")
         if result.get("success"):
             return result.get("result", [])
         return []
+
+    def _find_vtiger_lead_partner(self, partner_vals):
+        partner_obj = self.env["res.partner"]
+        for field_name in ("email", "phone", "mobile"):
+            value = partner_vals.get(field_name)
+            if value and field_name in partner_obj._fields:
+                partner = partner_obj.search(
+                    [
+                        (field_name, "=ilike", value),
+                        ("is_company", "=", False),
+                        ("parent_id", "=", False),
+                    ],
+                    limit=1,
+                )
+                if partner:
+                    return partner
+
+        if partner_vals.get("name"):
+            return partner_obj.search(
+                [
+                    ("name", "=ilike", partner_vals["name"]),
+                    ("is_company", "=", False),
+                    ("parent_id", "=", False),
+                ],
+                limit=1,
+            )
+        return partner_obj
+
+    def _get_or_create_vtiger_lead_partner(self, res, contact_name, country):
+        partner_name = contact_name or res.get("email") or res.get("phone")
+        if not partner_name:
+            return self.env["res.partner"]
+
+        partner_vals = {
+            "name": partner_name,
+            "email": res.get("email"),
+            "customer_rank": 1,
+            "street": res.get("lane"),
+            "city": res.get("city"),
+            "zip": res.get("code"),
+            "country_id": country.id if country else False,
+            "comment": res.get("description"),
+        }
+        phone = res.get("phone")
+        mobile = res.get("mobile")
+        if "mobile" in self.env["res.partner"]._fields:
+            partner_vals.update({"phone": phone, "mobile": mobile})
+        else:
+            partner_vals["phone"] = phone or mobile
+
+        partner_vals = self._clean_vtiger_vals(partner_vals)
+        partner_vals["parent_id"] = False
+        partner = self._find_vtiger_lead_partner(partner_vals)
+        partner_vals = self._filter_res_partner_vals(partner_vals)
+        if partner:
+            partner.write(partner_vals)
+        else:
+            partner = self.env["res.partner"].create(partner_vals)
+        return partner
 
     def _prepare_vtiger_lead_values(self, res):
         contact_name = " ".join(
@@ -63,14 +137,16 @@ class ResCompany(models.Model):
             ],
             limit=1,
         )
-        return {
+        lead_vals = {
             "type": "lead",
             "name": lead_name or "",
             "contact_name": contact_name,
             "partner_name": res.get("company"),
             "email_from": res.get("email"),
-            "phone": res.get("phone"),
-            "mobile": res.get("mobile"),
+            # Odoo 19 dropped the standalone "mobile" field on crm.lead and
+            # folded it into "phone"; fall back to it when phone is empty so
+            # no data is lost when syncing from VTiger.
+            "phone": res.get("phone") or res.get("mobile"),
             "website": res.get("website"),
             "street": res.get("lane"),
             "city": res.get("city"),
@@ -78,6 +154,14 @@ class ResCompany(models.Model):
             "country_id": country.id if country else False,
             "description": res.get("description"),
         }
+        partner = self._get_or_create_vtiger_lead_partner(res, contact_name, country)
+        if partner:
+            lead_vals["partner_id"] = partner.id
+        # Keep populating "mobile" too when running on an Odoo version
+        # where crm.lead still has that field.
+        if "mobile" in self.env["crm.lead"]._fields:
+            lead_vals["mobile"] = res.get("mobile")
+        return lead_vals
 
     def _prepare_vtiger_potential_values(self, res, partner_obj):
         crm_vals = {
@@ -108,7 +192,7 @@ class ResCompany(models.Model):
             crm_type = crm_vals.get("type") or "lead"
             for field_name in ("email_from", "phone", "mobile"):
                 value = crm_vals.get(field_name)
-                if value:
+                if value and field_name in crm_obj._fields:
                     crm = crm_obj.search(
                         [
                             ("type", "=", crm_type),
@@ -136,14 +220,18 @@ class ResCompany(models.Model):
             crm_vals.update({"vtiger_id": vtiger_id})
             crm_obj.create(crm_vals)
 
-    def sync_vtiger_crm(self):
+    def sync_vtiger_crm(self, full_sync=True):
         partner_obj = self.env["res.partner"]
         for company in self:
-            for res in company._get_vtiger_records(company, "Leads"):
+            for res in company._get_vtiger_records(
+                company, "Leads", full_sync=full_sync
+            ):
                 company._upsert_vtiger_crm(
                     company._prepare_vtiger_lead_values(res), res.get("id")
                 )
-            for res in company._get_vtiger_records(company, "Potentials"):
+            for res in company._get_vtiger_records(
+                company, "Potentials", full_sync=full_sync
+            ):
                 company._upsert_vtiger_crm(
                     company._prepare_vtiger_potential_values(res, partner_obj),
                     res.get("id"),

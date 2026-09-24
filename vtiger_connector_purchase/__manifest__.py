@@ -5,7 +5,7 @@
         "VTiger Purchase Connector | Odoo VTiger Purchase Connector | "
         "VTiger Purchase Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": """
         Advanced Vtiger Purchase Connector | Vtiger Purchase Connector |
         Vtiger Vendor Connector | Vtiger Vendor Integration |
