@@ -1,10 +1,9 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-from odoo import models
+from odoo import fields, models
 
 
 class ResCompany(models.Model):
@@ -12,7 +11,7 @@ class ResCompany(models.Model):
 
     def action_sync_vtiger(self):
         self.sync_vtiger_invoice(full_sync=False)
-        return super(ResCompany, self).action_sync_vtiger()
+        return super().action_sync_vtiger()
 
     def delete_existing_invoice(self, result):
         """Added the Method for the Work Existing invoice line,
@@ -37,7 +36,7 @@ class ResCompany(models.Model):
         """Build query based on the last sync date."""
         if company.last_sync_date and not full_sync:
             return """SELECT * FROM Invoice WHERE modifiedtime >= '%s';""" % (
-                company.last_sync_date
+                fields.Datetime.to_string(company.last_sync_date)
             )
         return """SELECT * FROM Invoice;"""
 
@@ -47,8 +46,7 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
     def _get_vtiger_record_by_id(self, company, vtiger_module, vtiger_id):
         if not vtiger_id:
@@ -171,7 +169,7 @@ class ResCompany(models.Model):
         res.get("hdnGrandTotal")
         invoice_line_vals_dict = []
         for order_line_dict in res.get("lineItems") or []:
-            if type(order_line_dict) != dict:
+            if not isinstance(order_line_dict, dict):
                 order_line_dict = res.get("lineItems").get(order_line_dict)
             product = order_line_dict.get("productid")
             if not product:
@@ -197,9 +195,7 @@ class ResCompany(models.Model):
                 "account_id": accounts["income"].id,
             }
             invoice_line_vals_dict.append((0, 0, invoice_line_vals))
-        if res.get("invoicestatus") in ["Created", "Sent"]:
-            invoice_id.state = "draft"
-        if res.get("invoicestatus") == "Credit Invoice":
+        if res.get("invoicestatus") == "Credit Invoice" and invoice_id.state == "draft":
             invoice_id.move_type = "out_refund"
         if not invoice_id.state == "posted":
             invoice_id.write({"invoice_line_ids": invoice_line_vals_dict})
@@ -223,7 +219,8 @@ class ResCompany(models.Model):
                 {
                     "journal_id": journal_id,
                     "amount": invoice_id.amount_total,
-                    "payment_date": invoice_id.invoice_date,
+                    "payment_date": invoice_id.invoice_date
+                    or fields.Date.context_today(self),
                     "communication": invoice_id.name,
                 }
             )

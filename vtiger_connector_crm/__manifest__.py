@@ -5,7 +5,7 @@
         "VTiger Lead Connector | Odoo VTiger Lead Connector | "
         "VTiger Lead Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": """
         Advanced Vtiger Lead Connector | Vtiger Lead Connector |
         CRM Lead Connector | CRM Lead Integration |

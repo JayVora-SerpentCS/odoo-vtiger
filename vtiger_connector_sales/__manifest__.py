@@ -5,7 +5,7 @@
         "VTiger Sales Connector | Odoo VTiger Sales Connector | "
         "VTiger Sales Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": """
         Advanced Vtiger Sales Connector | Vtiger Sales Connector |
         Vtiger Sales Order Connector | Vtiger Sales Order Integration |

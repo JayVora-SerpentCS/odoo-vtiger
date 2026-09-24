@@ -5,7 +5,7 @@
         "VTiger Invoice Connector | Odoo VTiger Invoice Connector | "
         "VTiger Invoice Integration with Odoo"
     ),
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": """
         Advanced Vtiger Invoice Connector | Vtiger Invoice Connector |
         Invoice Sync Connector | Invoice Sync Integration |

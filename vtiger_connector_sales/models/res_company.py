@@ -1,18 +1,17 @@
 # See LICENSE file for full copyright and licensing details.
 
-import json
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
-from odoo import models
+from odoo import fields, models
 
 
 class ResCompany(models.Model):
     _inherit = "res.company"
 
     def action_sync_vtiger(self):
-        self.sync_vtiger_sale_order()
-        return super(ResCompany, self).action_sync_vtiger()
+        self.sync_vtiger_sale_order(full_sync=False)
+        return super().action_sync_vtiger()
 
     def update_existing_sale_order_and_quotes(self, order_id):
         """Refresh lines only for the current editable order."""
@@ -108,16 +107,16 @@ class ResCompany(models.Model):
         elif target_state == "cancel" and order_id.state != "cancel":
             order_id.sudo().action_cancel()
 
-    def _build_query_sales(self, company, vtiger_type):
+    def _build_query_sales(self, company, vtiger_type, full_sync=True):
         """Build query based on the last sync date."""
-        if company.last_sync_date and not self.env.context.get(
-            "vtiger_sales_full_sync"
-        ):
+        if company.last_sync_date and not full_sync:
             qry_template = {
                 "SalesOrder": """SELECT * FROM SalesOrder WHERE modifiedtime >= '{}';""",
                 "Quotes": """SELECT * FROM Quotes WHERE modifiedtime >= '{}';""",
             }
-            return qry_template[vtiger_type].format(company.last_sync_date)
+            return qry_template[vtiger_type].format(
+                fields.Datetime.to_string(company.last_sync_date)
+            )
         qry_template_1 = {
             "SalesOrder": """SELECT * FROM SalesOrder;""",
             "Quotes": """SELECT * FROM Quotes;""",
@@ -130,8 +129,7 @@ class ResCompany(models.Model):
         data = urlencode(values)
         url = company.get_vtiger_server_url()
         req = Request("%s?%s" % (url, data))
-        response = urlopen(req, timeout=20)
-        return json.loads(response.read())
+        return company._vtiger_request_json(req, "querying VTiger")
 
     def _find_existing_vtiger_sale_order(self, res, so_order_vals):
         sale_order_obj = self.env["sale.order"]
@@ -168,10 +166,9 @@ class ResCompany(models.Model):
     def _sync_sale_order_line(self, res, order_id, company, session_name):
         """Sync the order lines from VTiger to Odoo."""
         product_obj = self.env["product.product"]
-        netprice = res.get("hdnGrandTotal")
         if res.get("lineItems"):
             for order_line_dict in res.get("lineItems"):
-                if type(order_line_dict) != dict:
+                if not isinstance(order_line_dict, dict):
                     order_line_dict = res.get("lineItems").get(order_line_dict)
                 product = product_obj.search(
                     [("vtiger_id", "=", order_line_dict.get("productid"))],
@@ -189,19 +186,20 @@ class ResCompany(models.Model):
                 order_line_vals = {
                     "name": order_line_dict.get("comment"),
                     "product_id": product and product.id,
-                    "product_uom": product.uom_id.id or 0,
+                    "product_uom_id": product.uom_id.id or 0,
                     "product_uom_qty": float(quantity or 0.00),
                     "price_unit": float(price_unit or 0.00),
-                    "price_subtotal": float(netprice or 0.00),
                     "order_id": order_id.id,
                 }
                 if order_id:
                     order_id.write({"order_line": [(0, 0, order_line_vals)]})
 
-    def fetch_so_and_quotes_data(self, company, vtiger_type):  # noqa: C901
+    def fetch_so_and_quotes_data(
+        self, company, vtiger_type, full_sync=True
+    ):  # noqa: C901
         access_key = company.get_vtiger_access_key()
         session_name = company.vtiger_login(access_key)
-        qry = self._build_query_sales(company, vtiger_type)
+        qry = self._build_query_sales(company, vtiger_type, full_sync=full_sync)
         result = self._execute_vtiger_query_sales(company, qry, session_name)
         if result.get("success"):
             for res in result.get("result", []):
@@ -233,17 +231,18 @@ class ResCompany(models.Model):
                 self._apply_vtiger_sale_state(order_id, res, vtiger_type)
             return True
 
-    def sync_vtiger_sale_order(self):
+    def sync_vtiger_sale_order(self, full_sync=True):
         for company in self:
             if self.env.user.company_id == company:
-                sales_company = company.with_context(vtiger_sales_full_sync=True)
-                sales_company.fetch_so_and_quotes_data(
-                    sales_company, vtiger_type="SalesOrder"
+                company.fetch_so_and_quotes_data(
+                    company, vtiger_type="SalesOrder", full_sync=full_sync
                 )
-                sales_company.sync_vtiger_sale_Quotes()
+                company.sync_vtiger_sale_Quotes(full_sync=full_sync)
         return True
 
-    def sync_vtiger_sale_Quotes(self):
+    def sync_vtiger_sale_Quotes(self, full_sync=True):
         for company in self:
-            company.fetch_so_and_quotes_data(company, vtiger_type="Quotes")
+            company.fetch_so_and_quotes_data(
+                company, vtiger_type="Quotes", full_sync=full_sync
+            )
         return True

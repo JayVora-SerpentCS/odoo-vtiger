@@ -68,23 +68,29 @@ class TestVtigerCrm(TransactionCase):
         if crm_vtiger_dict.get("success"):
             crm_result = crm_vtiger_dict.get("result")[0]
 
+            # Odoo 19 dropped the standalone "mobile" field on
+            # res.partner/res.users (merged into "phone"); only set it
+            # when running on a version where it still exists.
+            partner_obj = self.env["res.partner"]
+            phone_field = "mobile" if "mobile" in partner_obj._fields else "phone"
+
             # Create User
             if crm_result.get("assigned_user_id"):
                 self.env["res.users"].create(
                     {
                         "name": "Test user",
                         "login": "test@test",
-                        "mobile": 6669998883,
+                        phone_field: "6669998883",
                         "vtiger_id": crm_result.get("assigned_user_id"),
                     }
                 )
 
             # Create Partner
             if crm_result.get("contact_id"):
-                self.env["res.partner"].create(
+                partner_obj.create(
                     {
                         "name": "Test partner",
-                        "mobile": 6669998883,
+                        phone_field: "6669998883",
                         "street": "Sector 1",
                         "vtiger_id": crm_result.get("contact_id"),
                     }

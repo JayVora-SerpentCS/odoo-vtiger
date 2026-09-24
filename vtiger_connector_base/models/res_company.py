@@ -1,8 +1,13 @@
 # See LICENSE file for full copyright and licensing details.
 
 import json
+import logging
+import socket
 from datetime import datetime
 from hashlib import md5
+from html import escape
+from json import JSONDecodeError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -12,6 +17,8 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 URL = "webservice.php"
+VTIGER_REQUEST_TIMEOUT = 60
+_logger = logging.getLogger(__name__)
 
 
 class ResCompany(models.Model):
@@ -32,7 +39,6 @@ class ResCompany(models.Model):
     vtiger_invoice_progress = fields.Float(string="Invoices", readonly=True)
     vtiger_calendar_progress = fields.Float(string="Calendar Events", readonly=True)
     vtiger_project_progress = fields.Float(string="Projects / Tasks", readonly=True)
-    vtiger_helpdesk_progress = fields.Float(string="HelpDesk", readonly=True)
     has_vtiger_master_connector = fields.Boolean(
         compute="_compute_vtiger_connector_sections"
     )
@@ -56,7 +62,6 @@ class ResCompany(models.Model):
         transactional_modules = {
             "vtiger_connector_calendar",
             "vtiger_connector_crm",
-            "vtiger_connector_helpdesk",
             "vtiger_connector_invoice",
             "vtiger_connector_project",
             "vtiger_connector_purchase",
@@ -93,6 +98,58 @@ class ResCompany(models.Model):
     def get_vtiger_server_url(self):
         return "%s/%s" % (self.vtiger_server, URL)
 
+    def _vtiger_timeout_error_message(self, operation):
+        return _(
+            "VTiger did not respond within %(timeout)s seconds while %(operation)s. "
+            "Please try again after some time."
+        ) % {"timeout": VTIGER_REQUEST_TIMEOUT, "operation": operation}
+
+    def _vtiger_request_json(self, request, operation):
+        self.ensure_one()
+        try:
+            response = urlopen(request, timeout=VTIGER_REQUEST_TIMEOUT)
+            return json.loads(response.read())
+        except (TimeoutError, socket.timeout) as error:
+            raise UserError(self._vtiger_timeout_error_message(operation)) from error
+        except (HTTPError, URLError, OSError, JSONDecodeError, ValueError) as error:
+            raise UserError(
+                _(
+                    "Unable to communicate with VTiger while %(operation)s. "
+                    "Details: %(error)s"
+                )
+                % {"operation": operation, "error": error}
+            ) from error
+
+    def _post_vtiger_warning(self, title, messages):
+        if not messages:
+            return
+
+        safe_title = escape(str(title))
+        safe_messages = [escape(str(message)) for message in messages]
+        body = "<div><b>%s</b><br/>%s</div>" % (
+            safe_title,
+            "<br/>".join(safe_messages),
+        )
+
+        if hasattr(self, "message_post"):
+            self.message_post(
+                body=body,
+                message_type="notification",
+                subtype_xmlid="mail.mt_comment",
+            )
+
+    def _run_vtiger_sync_step(self, label, method, errors):
+        try:
+            method()
+        except UserError as error:
+            message = "%s: %s" % (label, error.args[0])
+            errors.append(message)
+            _logger.warning("VTiger sync step skipped: %s", message)
+        except Exception as error:
+            message = "%s: %s" % (label, error)
+            errors.append(message)
+            _logger.exception("VTiger sync step failed: %s", label)
+
     def get_vtiger_access_key(self):
         """Get the token using 'getchallenge' operation"""
         self.ensure_one()
@@ -100,9 +157,13 @@ class ResCompany(models.Model):
         values = {"operation": "getchallenge", "username": self.user_name}
         data = urlencode(values)
         url = self.get_vtiger_server_url()
-        req = urlopen("%s?%s" % (url, data), timeout=20)
-        response = req.read()
-        token = json.loads(response)["result"]["token"]
+        response = self._vtiger_request_json(
+            "%s?%s" % (url, data), _("getting VTiger challenge token")
+        )
+        try:
+            token = response["result"]["token"]
+        except KeyError as error:
+            raise UserError(_("Invalid VTiger challenge response.")) from error
         # Use the TOKEN + ACCESSKEY to create the tokenized accessKey
         tokenized_accessKey = md5(
             token.encode("utf-8") + self.access_key.encode("utf-8")
@@ -119,9 +180,23 @@ class ResCompany(models.Model):
             "accessKey": access_key,
         }
         url = self.get_vtiger_server_url()
-        response = requests.post(url=url, data=values, timeout=20).json()
+        try:
+            response = requests.post(
+                url=url, data=values, timeout=VTIGER_REQUEST_TIMEOUT
+            ).json()
+        except requests.exceptions.Timeout as error:
+            raise UserError(
+                self._vtiger_timeout_error_message(_("logging in"))
+            ) from error
+        except (requests.exceptions.RequestException, ValueError, KeyError) as error:
+            raise UserError(
+                _("Unable to login to VTiger. Details: %s") % error
+            ) from error
         # Return sessionName
-        return response["result"]["sessionName"]
+        try:
+            return response["result"]["sessionName"]
+        except KeyError as error:
+            raise UserError(_("Invalid VTiger login response.")) from error
 
     @api.model
     def sync_vtiger(self):
@@ -135,39 +210,82 @@ class ResCompany(models.Model):
         ).action_sync_vtiger_all()
 
     def action_sync_vtiger_master_data(self):
+        success = True
         for company in self:
+            errors = []
             if hasattr(company, "sync_vtiger_partner"):
-                company.sync_vtiger_partner()
+                company._run_vtiger_sync_step(
+                    _("Partners"),
+                    lambda: company.sync_vtiger_partner(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_service_products"):
-                company.sync_vtiger_service_products()
+                company._run_vtiger_sync_step(
+                    _("Products / Services"),
+                    lambda: company.sync_vtiger_service_products(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_pricebook"):
-                company.sync_vtiger_pricebook()
-        return True
+                company._run_vtiger_sync_step(
+                    _("Price Books"),
+                    lambda: company.sync_vtiger_pricebook(full_sync=True),
+                    errors,
+                )
+            if errors:
+                success = False
+                company._post_vtiger_warning(_("VTiger master sync warnings"), errors)
+        return success
 
     def action_sync_vtiger_transactional_data(self):
+        success = True
         for company in self:
+            errors = []
             if hasattr(company, "sync_vtiger_crm"):
-                company.sync_vtiger_crm()
+                company._run_vtiger_sync_step(
+                    _("CRM"), lambda: company.sync_vtiger_crm(full_sync=True), errors
+                )
             if hasattr(company, "sync_vtiger_sale_order"):
-                company.sync_vtiger_sale_order()
+                company._run_vtiger_sync_step(
+                    _("Sale Orders"),
+                    lambda: company.sync_vtiger_sale_order(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_purchase_order"):
-                company.sync_vtiger_purchase_order(full_sync=True)
+                company._run_vtiger_sync_step(
+                    _("Purchase Orders"),
+                    lambda: company.sync_vtiger_purchase_order(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_invoice"):
-                company.sync_vtiger_invoice(full_sync=True)
+                company._run_vtiger_sync_step(
+                    _("Invoices"),
+                    lambda: company.sync_vtiger_invoice(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_calendar_event"):
-                company.sync_vtiger_calendar_event(full_sync=True)
+                company._run_vtiger_sync_step(
+                    _("Calendar Events"),
+                    lambda: company.sync_vtiger_calendar_event(full_sync=True),
+                    errors,
+                )
             if hasattr(company, "sync_vtiger_project_task"):
-                company.sync_vtiger_project_task()
-            if hasattr(company, "sync_vtiger_helpdesk_ticket"):
-                company.sync_vtiger_helpdesk_ticket(full_sync=True)
-            if hasattr(company, "sync_vtiger_document"):
-                company.sync_vtiger_document()
-        return True
+                company._run_vtiger_sync_step(
+                    _("Projects / Tasks"),
+                    lambda: company.sync_vtiger_project_task(full_sync=True),
+                    errors,
+                )
+            if errors:
+                success = False
+                company._post_vtiger_warning(
+                    _("VTiger transactional sync warnings"), errors
+                )
+        return success
 
     def action_sync_vtiger_all(self):
-        self.action_sync_vtiger_master_data()
-        self.action_sync_vtiger_transactional_data()
-        self.write({"last_sync_date": datetime.now()})
+        master_success = self.action_sync_vtiger_master_data()
+        transactional_success = self.action_sync_vtiger_transactional_data()
+        if master_success and transactional_success:
+            self.write({"last_sync_date": datetime.now()})
         return True
 
     def action_sync_vtiger(self):
@@ -180,6 +298,7 @@ class ResCompany(models.Model):
             "vtiger_partner_progress": {
                 "modules": ("Contacts", "Vendors", "Accounts"),
                 "model": "res.partner",
+                "strict_vtiger_id": True,
             },
             "vtiger_product_progress": {
                 "modules": ("Products", "Services"),
@@ -192,6 +311,7 @@ class ResCompany(models.Model):
             "vtiger_crm_progress": {
                 "modules": ("Leads", "Potentials"),
                 "model": "crm.lead",
+                "strict_vtiger_id": True,
             },
             "vtiger_sale_progress": {
                 "modules": ("SalesOrder", "Quotes"),
@@ -213,11 +333,6 @@ class ResCompany(models.Model):
                 "modules": ("Project", "ProjectTask"),
                 "models": ("project.project", "project.task"),
             },
-            "vtiger_helpdesk_progress": {
-                "modules": ("HelpDesk", "ServiceContracts"),
-                "model": "helpdesk.ticket",
-                "id_format": "%(module)s:%s",
-            },
         }
 
     def _execute_vtiger_count_query(self, vtiger_module, session_name):
@@ -230,8 +345,7 @@ class ResCompany(models.Model):
         values = {"operation": "query", "query": qry, "sessionName": session_name}
         data = urlencode(values)
         req = Request("%s?%s" % (self.get_vtiger_server_url(), data))
-        response = urlopen(req, timeout=20)
-        result = json.loads(response.read())
+        result = self._vtiger_request_json(req, _("querying %s") % vtiger_module)
         if not result.get("success") or not result.get("result"):
             return 0
         row = result["result"][0]
@@ -257,8 +371,7 @@ class ResCompany(models.Model):
         values = {"operation": "query", "query": qry, "sessionName": session_name}
         data = urlencode(values)
         req = Request("%s?%s" % (self.get_vtiger_server_url(), data))
-        response = urlopen(req, timeout=20)
-        result = json.loads(response.read())
+        result = self._vtiger_request_json(req, _("querying %s") % vtiger_module)
         if not result.get("success"):
             return []
         return [row.get("id") for row in result.get("result", []) if row.get("id")]
@@ -273,21 +386,24 @@ class ResCompany(models.Model):
         values = {"operation": "query", "query": qry, "sessionName": session_name}
         data = urlencode(values)
         req = Request("%s?%s" % (self.get_vtiger_server_url(), data))
-        response = urlopen(req, timeout=20)
-        result = json.loads(response.read())
+        result = self._vtiger_request_json(req, _("querying %s") % vtiger_module)
         if not result.get("success"):
             return []
         return result.get("result", [])
+
+    def _format_vtiger_progress_id(self, definition, vtiger_module, vtiger_id):
+        return definition.get("id_format", "%s").replace(
+            "%(module)s", vtiger_module
+        ) % (vtiger_id)
 
     def _get_vtiger_progress_source_ids(self, definition, session_name):
         source_ids = []
         for vtiger_module in definition["modules"]:
             for vtiger_id in self._execute_vtiger_id_query(vtiger_module, session_name):
                 source_ids.append(
-                    definition.get("id_format", "%s").replace(
-                        "%(module)s", vtiger_module
+                    self._format_vtiger_progress_id(
+                        definition, vtiger_module, vtiger_id
                     )
-                    % vtiger_id
                 )
         return source_ids
 
@@ -331,8 +447,6 @@ class ResCompany(models.Model):
             return self._find_progress_by_name(
                 model, record.get("subject") or record.get("taskname")
             )
-        if model_name == "helpdesk.ticket":
-            return self._find_progress_by_name(model, record.get("ticket_title"))
         return model.browse()
 
     def _find_progress_by_name(self, model, name):
@@ -366,7 +480,7 @@ class ResCompany(models.Model):
             ("phone", record.get("phone")),
             ("name", name),
         ):
-            if value:
+            if value and field_name in model._fields:
                 partner = model.search(
                     base_domain
                     + [(field_name, "=ilike", value), ("vtiger_id", "=", False)],
@@ -414,13 +528,16 @@ class ResCompany(models.Model):
                 if part
             ) or record.get("company")
             crm_type = "lead"
+        # Odoo 19 removed the standalone "mobile" field from crm.lead
+        # (it was folded into "phone"), so we only search fields that
+        # actually exist on the model to stay compatible across versions.
         for field_name, value in (
             ("email_from", record.get("email")),
-            ("phone", record.get("phone")),
+            ("phone", record.get("phone") or record.get("mobile")),
             ("mobile", record.get("mobile")),
             ("name", name),
         ):
-            if value:
+            if value and field_name in model._fields:
                 crm = model.search(
                     [
                         ("type", "=", crm_type),
@@ -521,6 +638,8 @@ class ResCompany(models.Model):
                 continue
             records = model.search([("vtiger_id", "in", source_ids)])
             seen_records.update(records.ids)
+            if definition.get("strict_vtiger_id"):
+                continue
             for vtiger_module, source_record in source_records:
                 odoo_record = self._find_odoo_record_from_vtiger_record(
                     model, vtiger_module, source_record
@@ -532,9 +651,17 @@ class ResCompany(models.Model):
     def action_check_vtiger_sync_progress(self):
         for company in self:
             company._check_vtiger_connection_config()
-            access_key = company.get_vtiger_access_key()
-            session_name = company.vtiger_login(access_key)
             vals = {"last_vtiger_progress_check": fields.Datetime.now()}
+            errors = []
+            try:
+                access_key = company.get_vtiger_access_key()
+                session_name = company.vtiger_login(access_key)
+            except UserError as error:
+                company.write(vals)
+                company._post_vtiger_warning(
+                    _("VTiger progress check warning"), [error.args[0]]
+                )
+                continue
             for (
                 field_name,
                 definition,
@@ -545,12 +672,26 @@ class ResCompany(models.Model):
                     continue
                 if definition.get("model") and definition["model"] not in company.env:
                     continue
-                source_ids = company._get_vtiger_progress_source_ids(
-                    definition, session_name
-                )
-                source_records = company._get_vtiger_progress_source_records(
-                    definition, session_name
-                )
+                try:
+                    if definition.get("strict_vtiger_id"):
+                        source_ids = company._get_vtiger_progress_source_ids(
+                            definition, session_name
+                        )
+                        source_records = []
+                    else:
+                        source_records = company._get_vtiger_progress_source_records(
+                            definition, session_name
+                        )
+                        source_ids = [
+                            company._format_vtiger_progress_id(
+                                definition, vtiger_module, record.get("id")
+                            )
+                            for vtiger_module, record in source_records
+                            if record.get("id")
+                        ]
+                except UserError as error:
+                    errors.append("%s: %s" % (field_name, error.args[0]))
+                    continue
                 vtiger_total = len(source_ids)
                 odoo_total = company._count_odoo_vtiger_records(
                     definition,
@@ -563,4 +704,8 @@ class ResCompany(models.Model):
                     else min(100.0, (odoo_total / vtiger_total) * 100.0)
                 )
             company.write(vals)
+            if errors:
+                company._post_vtiger_warning(
+                    _("VTiger progress check warnings"), errors
+                )
         return True
