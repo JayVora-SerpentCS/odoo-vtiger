@@ -143,7 +143,7 @@ class ResCompany(models.Model):
             "contact_name": contact_name,
             "partner_name": res.get("company"),
             "email_from": res.get("email"),
-            # Odoo 19 dropped the standalone "mobile" field on crm.lead and
+            # Odoo 20 drops the standalone "mobile" field on crm.lead and
             # folded it into "phone"; fall back to it when phone is empty so
             # no data is lost when syncing from VTiger.
             "phone": res.get("phone") or res.get("mobile"),

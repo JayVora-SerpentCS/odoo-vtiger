@@ -105,9 +105,9 @@ class TestVtigerPartner(TransactionCase):
         }
 
         partner_obj = self.env["res.partner"]
-        # Odoo 19 dropped the standalone "mobile" field on res.partner
+        # Odoo 20 drops the standalone "mobile" field on res.partner.
         # (folded into "phone"); only set it when it still exists so
-        # this test keeps working on both earlier versions and 19.0.
+        # this test keeps working across supported Odoo versions.
         has_mobile_field = "mobile" in partner_obj._fields
 
         if vtiger_partner_dict.get("success"):

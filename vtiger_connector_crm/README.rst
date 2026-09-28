@@ -4,6 +4,11 @@ Vtiger Connector Lead
 
 * This module helps to Create or update Leads and Opportunity
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:

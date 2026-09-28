@@ -8,8 +8,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 AGPL_LINK = "https://www.gnu.org/licenses/agpl-3.0.html"
 INTRO = (
-    "Odoo - vTiger Integration (These connector modules are migrated and "
-    "verified for vTiger version 9.26.9.1)"
+    "Odoo 20 - vTiger Integration (These connector modules are migrated "
+    "for Odoo 20.0 and verified for vTiger version 9.26.9.1)"
 )
 MAINTAINER = (
     '<a href="https://www.serpentcs.com">'

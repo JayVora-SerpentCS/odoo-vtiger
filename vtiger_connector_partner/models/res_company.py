@@ -32,9 +32,9 @@ class ResCompany(models.Model):
             if partner:
                 return partner
 
-        # Odoo 19 dropped the standalone "mobile" field on res.partner
+        # Odoo 20 drops the standalone "mobile" field on res.partner.
         # (folded into "phone"); only search fields that actually exist
-        # on the model so this keeps working on both earlier versions and 19.0.
+        # on the model so this keeps working across Odoo versions.
         for field_name in ("email", "mobile", "phone"):
             value = partner_vals.get(field_name)
             if value and field_name in partner_obj._fields:
@@ -93,9 +93,9 @@ class ResCompany(models.Model):
 
     def _add_vtiger_phone_fields(self, vals, res):
         """Set phone/mobile on a partner vals dict in a way that works on
-        both earlier Odoo versions (separate "phone" and "mobile" fields) and Odoo
-        19.0, which dropped the standalone "mobile" field on res.partner
-        and folded it into "phone".
+        both older Odoo versions (separate "phone" and "mobile" fields) and
+        newer Odoo versions (19.0 onward) that dropped the standalone
+        "mobile" field on res.partner and folded it into "phone".
         """
         phone = res.get("phone")
         mobile = res.get("mobile")

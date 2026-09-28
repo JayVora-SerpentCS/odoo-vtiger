@@ -4,6 +4,11 @@ Vtiger Connector Purchase
 
 * This module helps to Create or update Purchase order
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:

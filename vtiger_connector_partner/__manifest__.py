@@ -5,7 +5,7 @@
         "VTiger Partner Connector | VTiger Vendor Connector | "
         "Odoo VTiger Partner Connector | VTiger Partner Integration with Odoo"
     ),
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "summary": """
         Advanced Vtiger Partner Connector | Vtiger Partner Connector |
         Vtiger Contact Connector | Vtiger Contact Integration |

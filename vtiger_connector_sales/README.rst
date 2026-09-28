@@ -4,6 +4,11 @@ Vtiger Connector Sale order
 
 * This module helps to Create or update Quotation or Sale order
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:

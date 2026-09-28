@@ -6,14 +6,16 @@
         <field name="model">calendar.event</field>
         <field name="inherit_id" ref="calendar.view_calendar_event_form" />
         <field name="arch" type="xml">
-            <xpath
-                expr="//div[hasclass('d-flex', 'align-items-baseline')]"
-                position="after"
-            >
+            <!-- Field-based xpath (stable across versions) instead of a
+                 CSS-class based structural xpath, which is fragile and can
+                 break silently if the parent view's markup/classes change
+                 between Odoo releases. "name" is the calendar event's core
+                 subject field and is expected to remain present. -->
+            <field name="name" position="after">
                 <group>
                     <field name="vtiger_id" />
                 </group>
-            </xpath>
+            </field>
         </field>
     </record>
 

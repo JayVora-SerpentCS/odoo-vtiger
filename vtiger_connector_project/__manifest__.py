@@ -6,7 +6,7 @@
         "Odoo VTiger Projects and Tasks Connector | "
         "VTiger Projects and Tasks Integration with Odoo"
     ),
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "summary": """
         Advanced Vtiger Project and Task Connector |
         Vtiger Project Connector | Vtiger Task Connector |

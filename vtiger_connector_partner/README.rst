@@ -4,6 +4,11 @@ Vtiger Connector Partners
 
 * This module helps to Create or update Partners (Customers, Vendor or Organization)
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:

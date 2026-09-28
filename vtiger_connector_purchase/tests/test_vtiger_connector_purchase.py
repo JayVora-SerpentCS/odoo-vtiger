@@ -143,7 +143,7 @@ class TestVtigerPurchase(TransactionCase):
                 {
                     "name": po_line_result.get("comment"),
                     "product_id": product.id,
-                    "product_uom_id": product.uom_id.id,
+                    "uom_id": product.uom_id.id,
                     "product_qty": float(po_line_result.get("quantity") or 0.00),
                     "price_unit": float(po_line_result.get("listprice") or 0.00),
                     "order_id": po_rec.id,

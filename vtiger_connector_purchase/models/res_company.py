@@ -154,7 +154,7 @@ class ResCompany(models.Model):
                     {
                         "name": order_line_dict.get("comment") or product.display_name,
                         "product_id": product.id,
-                        "product_uom_id": product.uom_id.id,
+                        "uom_id": product.uom_id.id,
                         "product_qty": float(quantity or 0.00),
                         "price_unit": float(price_unit or 0.00),
                         "date_planned": fields.Datetime.to_string(date_planned),

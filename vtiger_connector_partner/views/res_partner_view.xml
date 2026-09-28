@@ -20,7 +20,7 @@
             <field name="name" position="after">
                 <field name="vtiger_id" />
             </field>
-            <filter name="type_person" position="after">
+            <filter name="filter_vat_set" position="after">
                 <filter
                     string="Synced From Vtiger"
                     name="vtiger"

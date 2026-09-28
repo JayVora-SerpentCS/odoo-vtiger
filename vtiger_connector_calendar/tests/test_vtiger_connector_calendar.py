@@ -72,7 +72,7 @@ class TestVtigerCalendar(TransactionCase):
                     "login": "test@test",
                     "user_id": 1,
                 }
-                # Odoo 19 dropped the standalone "mobile" field on
+                # Some newer Odoo versions (19.0 onward) drop the standalone "mobile" field on
                 # res.partner/res.users (merged into "phone"); only set it
                 # when running on a version where it still exists.
                 if "mobile" in self.env["res.users"]._fields:

@@ -2,7 +2,6 @@
 
 import json
 import logging
-import socket
 from datetime import datetime
 from hashlib import md5
 from html import escape
@@ -12,6 +11,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import requests
+from markupsafe import Markup
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -109,7 +109,7 @@ class ResCompany(models.Model):
         try:
             response = urlopen(request, timeout=VTIGER_REQUEST_TIMEOUT)
             return json.loads(response.read())
-        except (TimeoutError, socket.timeout) as error:
+        except TimeoutError as error:
             raise UserError(self._vtiger_timeout_error_message(operation)) from error
         except (HTTPError, URLError, OSError, JSONDecodeError, ValueError) as error:
             raise UserError(
@@ -133,7 +133,7 @@ class ResCompany(models.Model):
 
         if hasattr(self, "message_post"):
             self.message_post(
-                body=body,
+                body=Markup(body),
                 message_type="notification",
                 subtype_xmlid="mail.mt_comment",
             )
@@ -528,7 +528,7 @@ class ResCompany(models.Model):
                 if part
             ) or record.get("company")
             crm_type = "lead"
-        # Odoo 19 removed the standalone "mobile" field from crm.lead
+        # Odoo 20 removes the standalone "mobile" field from crm.lead.
         # (it was folded into "phone"), so we only search fields that
         # actually exist on the model to stay compatible across versions.
         for field_name, value in (

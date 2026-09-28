@@ -4,6 +4,11 @@ Vtiger Connector Projects and Tasks
 
 * This module helps to create or update Projects and Tasks
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:

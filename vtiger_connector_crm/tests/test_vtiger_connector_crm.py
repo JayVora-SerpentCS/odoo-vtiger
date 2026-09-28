@@ -68,7 +68,7 @@ class TestVtigerCrm(TransactionCase):
         if crm_vtiger_dict.get("success"):
             crm_result = crm_vtiger_dict.get("result")[0]
 
-            # Odoo 19 dropped the standalone "mobile" field on
+            # Some newer Odoo versions (19.0 onward) drop the standalone "mobile" field on
             # res.partner/res.users (merged into "phone"); only set it
             # when running on a version where it still exists.
             partner_obj = self.env["res.partner"]

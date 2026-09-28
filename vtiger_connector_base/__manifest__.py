@@ -5,7 +5,7 @@
         "VTiger Base Connector | Vtiger Integration with Odoo | "
         "Odoo Vtiger Connector"
     ),
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "summary": """
         Advanced Vtiger Base Connector | Vtiger Base Connector |
         Vtiger Odoo Connector | Vtiger Odoo Integration |
@@ -29,6 +29,7 @@
     "depends": ["base"],
     "data": ["data/vtiger_connector_base_data.xml", "views/res_company_view.xml"],
     "installable": True,
+    "external_dependencies": {"python": ["requests"]},
     "assets": {
         "web.assets_backend": [
             "vtiger_connector_base/static/src/css/vtiger_base.css",

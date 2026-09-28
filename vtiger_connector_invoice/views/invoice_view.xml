@@ -20,9 +20,13 @@
             <field name="name" position="after">
                 <field name="vtiger_id" />
             </field>
-<!--             <filter name="customer" position="after">
-                <filter string="Synced From Vtiger" name="vtiger" domain="[('vtiger_id', '!=', False)]"/>
-            </filter> -->
+            <filter name="posted" position="after">
+                <filter
+                    string="Synced From Vtiger"
+                    name="vtiger"
+                    domain="[('vtiger_id', '!=', False)]"
+                />
+            </filter>
         </field>
     </record>
 

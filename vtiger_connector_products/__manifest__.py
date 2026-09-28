@@ -5,7 +5,7 @@
         "VTiger Products Connector | Odoo VTiger Products Connector | "
         "VTiger Products Integration with Odoo"
     ),
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "summary": """
         Advanced Vtiger Product Connector | Vtiger Product Connector |
         Vtiger Inventory Connector | Vtiger Inventory Integration |

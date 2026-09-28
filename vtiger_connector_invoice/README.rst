@@ -4,6 +4,11 @@ Vtiger Connector Invoice
 
 * This module helps to Create or update Invoices
 
+Compatibility
+=============
+
+* Odoo 20.0
+
 Usage
 =====
 How to use it:
